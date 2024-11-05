@@ -55,6 +55,7 @@ import org.dependencytrack.model.ComponentIdentity;
 import org.dependencytrack.model.ComponentMetaInformation;
 import org.dependencytrack.model.ComponentProperty;
 import org.dependencytrack.model.ConfigPropertyConstants;
+import org.dependencytrack.model.CsafEntity;
 import org.dependencytrack.model.DependencyMetrics;
 import org.dependencytrack.model.Epss;
 import org.dependencytrack.model.Finding;
@@ -162,6 +163,7 @@ public class QueryManager extends AlpineQueryManager {
     private IntegrityAnalysisQueryManager integrityAnalysisQueryManager;
     private TagQueryManager tagQueryManager;
     private EpssQueryManager epssQueryManager;
+    private CsafQueryManager csafQueryManager;
 
     /**
      * Default constructor.
@@ -428,6 +430,17 @@ public class QueryManager extends AlpineQueryManager {
             metricsQueryManager = (request == null) ? new MetricsQueryManager(getPersistenceManager()) : new MetricsQueryManager(getPersistenceManager(), request);
         }
         return metricsQueryManager;
+    }
+
+    /**
+     * Lazy instantiation of CsafQueryManager.
+     * @return a CsafQueryManager object
+     */
+    private CsafQueryManager getCsafQueryManager() {
+        if(csafQueryManager == null) {
+            csafQueryManager = (request == null) ? new CsafQueryManager(getPersistenceManager()) : new CsafQueryManager(getPersistenceManager(), request);
+        }
+        return csafQueryManager;
     }
 
     /**
@@ -1285,6 +1298,18 @@ public class QueryManager extends AlpineQueryManager {
 
     void deleteMetrics(Component component) {
         getMetricsQueryManager().deleteMetrics(component);
+    }
+
+    public PaginatedResult getCsafEntities() {
+        return getCsafQueryManager().getCsafEntities();
+    }
+
+    public List<CsafEntity> getAllCsafEntities() {
+        return getCsafQueryManager().getAllCsafEntities();
+    }
+
+    public CsafEntity createCsafEntity(String name, String url, boolean enabled) {
+        return getCsafQueryManager().createCsafEntity(name, url, enabled);
     }
 
     public PaginatedResult getRepositories() {
