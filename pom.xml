@@ -762,6 +762,7 @@
                         <containerIncludeJarPattern>^$</containerIncludeJarPattern>
                         <webInfIncludeJarPattern>^$</webInfIncludeJarPattern>
                     </webApp>
+                    <scan>10</scan>
                 </configuration>
             </plugin>
             <plugin>

@@ -34,6 +34,7 @@ import org.dependencytrack.model.Repository;
 import org.dependencytrack.model.WorkflowState;
 import org.dependencytrack.model.WorkflowStatus;
 import org.dependencytrack.model.WorkflowStep;
+import org.dependencytrack.model.validation.ValidUuid;
 import org.dependencytrack.persistence.QueryManager;
 import org.dependencytrack.policy.vulnerability.VulnerabilityPolicyProvider;
 import org.dependencytrack.policy.vulnerability.VulnerabilityPolicyProviderFactory;
@@ -46,9 +47,11 @@ import alpine.Config;
 import alpine.common.logging.Logger;
 import alpine.event.framework.Event;
 import alpine.persistence.PaginatedResult;
+import alpine.security.crypto.DataEncryption;
 import alpine.server.auth.PermissionRequired;
 import alpine.server.resources.AlpineResource;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -60,10 +63,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -251,6 +256,84 @@ public class CsafResource extends AlpineResource {
             //}
             final CsafEntity csafEntity = qm.createCsafEntity(jsonEntity.getName(), jsonEntity.getUrl(), jsonEntity.isEnabled());
             return Response.status(Response.Status.CREATED).entity(csafEntity).build();
+        }
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            summary = "Updates a CSAF entity",
+            description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "The updated CSAF entity",
+                    content = @Content(schema = @Schema(implementation = Repository.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "The UUID of the repository could not be found")
+    })
+    @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT}) // TODO create update only permission
+    public Response updateCsafEntity(CsafEntity jsonEntity) {
+        /*final Validator validator = super.getValidator(); // TODO validate
+        failOnValidationError(validator.validateProperty(jsonRepository, "identifier"),
+                validator.validateProperty(jsonRepository, "url")
+        );
+        //TODO: When the UI changes are updated then this should be a validation check as part of line 201
+        if (jsonRepository.isAuthenticationRequired() == null) {
+            jsonRepository.setAuthenticationRequired(false);
+        }*/
+        try (QueryManager qm = new QueryManager()) {
+            CsafEntity csafEntity = qm.getObjectById(CsafEntity.class, jsonEntity.getCsafEntryId());
+            if (csafEntity != null) {                
+                final String url = StringUtils.trimToNull(jsonEntity.getUrl());
+                try {
+                    /*// The password is not passed to the front-end, so it should only be overwritten if it is not null.
+                    final String updatedPassword = jsonRepository.getPassword() != null && !jsonRepository.getPassword().equals(ENCRYPTED_PLACEHOLDER)
+                            ? DataEncryption.encryptAsString(jsonRepository.getPassword())
+                            : repository.getPassword();
+                            */
+                    csafEntity = qm.updateCsafEntity(jsonEntity.getCsafEntryId(), jsonEntity.getName(), jsonEntity.getUrl(), jsonEntity.isEnabled());
+                    
+                    return Response.ok(csafEntity).build();
+                } catch (Exception e) {
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("The specified CSAF source could not be updated").build();
+                }
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).entity("The csafEntryId of the source could not be found.").build();
+            }
+        }
+    }
+
+    @DELETE
+    @Path("/{csafEntryId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            summary = "Deletes a CSAF source",
+            description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "CSAF source removed successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "The entry ID of the CSAF source could not be found")
+    })
+    @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT}) // TODO OR delete only permission
+    public Response deleteCsafEntity(
+            @Parameter(description = "The csafEntryId of the CSAF source to delete", schema = @Schema(type = "string", format = "long"), required = true)
+            @PathParam("csafEntryId") String csafEntryId) {
+        try (QueryManager qm = new QueryManager()) {
+
+            
+            final CsafEntity csafEntity = qm.getObjectById(CsafEntity.class, csafEntryId);
+            if (csafEntity != null) {
+                qm.delete(csafEntity);
+                return Response.status(Response.Status.NO_CONTENT).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).entity("The csafEntryId of the CSAF source could not be found.").build();
+            }
         }
     }
 

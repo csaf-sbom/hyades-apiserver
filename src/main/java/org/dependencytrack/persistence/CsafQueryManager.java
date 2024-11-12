@@ -1,6 +1,7 @@
 package org.dependencytrack.persistence;
 
 import java.util.List;
+import java.util.UUID;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
@@ -43,7 +44,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     public PaginatedResult getCsafEntities() {
         final Query<CsafEntity> query = pm.newQuery(CsafEntity.class);
         if (orderBy == null) {
-            query.setOrdering("name asc");
+            query.setOrdering("csafEntryId desc");
         }
         /*if (filter != null) {//TODO enable filtering
             query.setFilter("identifier.toLowerCase().matches(:identifier)");
@@ -68,6 +69,8 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     /**
      * Creates a new CSAF Entity
      * @param name Name of the CSAF entity
+     * @param url URL of the configured source
+     * @param enabled True, if source should be used for mirroring
      * @return the created CSAF entity
      */
     public CsafEntity createCsafEntity(String name, String url, boolean enabled) {
@@ -93,49 +96,31 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
      /**
-     * Creates a new CSAF Entity.
+     * Updates an existing CSAF entity.
      *
-     * @param type                     the type of repository
-     * @param identifier               a unique (to the type) identifier for the repo
-     * @param url                      the URL to the repository
-     * @param enabled                  if the repo is enabled or not
-     * @param internal                 if the repo is internal or not
-     * @param isAuthenticationRequired if the repository needs authentication or not
-     * @param username                 the username to access the (authenticated) repository with
-     * @param password                 the password to access the (authenticated) repository with
-     * @return the created Repository
+     * @oaram csafEntryId ID of the CSAF source
+     * @param name Name of the CSAF entity
+     * @param url URL of the configured source
+     * @param enabled True, if source should be used for mirroring
+     * @return the created CSAF entity
      */
-    public Repository createRepository(RepositoryType type, String identifier, String url, boolean enabled, boolean internal, boolean isAuthenticationRequired, String username, String password) {
-        if (repositoryExist(type, identifier)) {
-            return null;
-        }
-        int order = 0;
-        final List<Repository> existingRepos = getAllRepositoriesOrdered(type);
-        if (existingRepos != null) {
-            for (final Repository existing : existingRepos) {
-                if (existing.getResolutionOrder() > order) {
-                    order = existing.getResolutionOrder();
-                }
-            }
-        }
-        final Repository repo = new Repository();
-        repo.setType(type);
-        repo.setIdentifier(identifier);
-        repo.setUrl(url);
-        repo.setResolutionOrder(order + 1);
-        repo.setEnabled(enabled);
-        repo.setInternal(internal);
-        repo.setAuthenticationRequired(isAuthenticationRequired);
-        if (Boolean.TRUE.equals(isAuthenticationRequired) && (username != null || password != null)) {
-            repo.setUsername(StringUtils.trimToNull(username));
-            try {
-                if (password != null) {
-                    repo.setPassword(DataEncryption.encryptAsString(password));
-                }
-            } catch (Exception e) {
-                LOGGER.error("An error occurred while saving password in encrypted state", e);
-            }
-        }
-        return persist(repo);
+    public CsafEntity updateCsafEntity(long csafEntryId, String name, String url, boolean enabled) {
+        LOGGER.debug("Updating within CsafQueryManager "+csafEntryId);
+        final CsafEntity csafEntity = getObjectById(CsafEntity.class, csafEntryId);
+        csafEntity.setCsafEntryId(csafEntryId);
+        csafEntity.setName(name);
+        csafEntity.setUrl(url);
+        /*repository.setInternal(internal);
+        repository.setAuthenticationRequired(authenticationRequired);
+        if (!authenticationRequired) {
+            repository.setUsername(null);
+            repository.setPassword(null);
+        } else {
+            repository.setUsername(username);
+            repository.setPassword(password);
+        }*/
+
+        csafEntity.setEnabled(enabled);
+        return persist(csafEntity);
     }
 }
