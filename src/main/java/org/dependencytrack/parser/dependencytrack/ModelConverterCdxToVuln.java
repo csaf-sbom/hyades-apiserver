@@ -220,6 +220,7 @@ public final class ModelConverterCdxToVuln {
             case "OSV" -> alias.setOsvId(cycloneVuln.getId());
             case "SNYK" -> alias.setSnykId(cycloneVuln.getId());
             case "VULNDB" -> alias.setVulnDbId(cycloneVuln.getId());
+            // TODO: case "CSAF" -> alias.setCsafId?
             // Source of the vulnerability itself has been validated before,
             // so this scenario is highly unlikely to ever happen. Including
             // it here to make linters happy.
