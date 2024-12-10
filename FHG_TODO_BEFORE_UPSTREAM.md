@@ -8,6 +8,7 @@ https://github.com/oasis-open/csaf-documentation/blob/master/img/csaf-logo.png
 [ ] run mvn package with checkstyle enabled
 
 [ ] delete FHG_README.md or merge its contents somehow
+[ ] javadoc @author names?
 
 # hyades
 [ ] remove pgadmin service from hyades/docker-compose.yml

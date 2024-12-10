@@ -20,6 +20,8 @@ Start local development
 mvn quarkus:dev -Dcheckstyle.skip
 ```
 
+mvn -pl vulnerability-analyzer quarkus:dev -Dcheckstyle.skip
+
 
 ## Launch apiserver (this repository)
 This will provide backend functionality to the frontend and coordinate worker tasks
