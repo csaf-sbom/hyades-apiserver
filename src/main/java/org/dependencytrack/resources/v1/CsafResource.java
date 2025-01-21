@@ -210,6 +210,32 @@ public class CsafResource extends AlpineResource {
         }
     }
 
+    @GET
+    @Path("/discoveries/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            summary = "Returns a list of discovered CSAF sources",
+            description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>"
+    )
+    @PaginatedApi
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "A list of discovered CSAF sources",
+                    headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of discovered CSAF sources", schema = @Schema(type = "integer")),
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafEntity.class)))
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
+    public Response getDiscoveredCsafSources() {
+        try (QueryManager qm = new QueryManager(getAlpineRequest())) {
+            var results = qm.getCsafEntities();            
+            final PaginatedResult result = results;
+            return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
+        }
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

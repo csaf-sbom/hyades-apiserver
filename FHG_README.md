@@ -20,6 +20,8 @@ Start local development
 mvn quarkus:dev -Dcheckstyle.skip
 ```
 
+
+mvn -pl mirror-service quarkus:dev -Dcheckstyle.skip
 mvn -pl vulnerability-analyzer quarkus:dev -Dcheckstyle.skip
 
 
