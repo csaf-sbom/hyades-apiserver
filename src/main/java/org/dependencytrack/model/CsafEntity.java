@@ -34,6 +34,8 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
+import org.datanucleus.metadata.JdbcType;
+
 /**
  * Model for configured CSAF source Entities.
  *
@@ -47,6 +49,9 @@ public class CsafEntity implements Serializable {
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.NATIVE)
     private long csafEntryId;
+
+    @Persistent(name = "TYPE")
+    private CsafEntityType entityType;
 
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
     @Pattern(regexp = RegexSequence.Definition.PRINTABLE_CHARS, message = "The name may only contain printable characters")
@@ -64,8 +69,20 @@ public class CsafEntity implements Serializable {
     @NotNull
     private boolean enabled;
 
+    @Persistent
+    @Column(name = "CONTENT", jdbcType = "LONGVARCHAR")
+    private String content;
+
     public long getCsafEntryId() {
         return csafEntryId;
+    }
+
+    public CsafEntityType getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(CsafEntityType entityType) {
+        this.entityType = entityType;
     }
 
     public void setCsafEntryId(long csafEntryId) {
