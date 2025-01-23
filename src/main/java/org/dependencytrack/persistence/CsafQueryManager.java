@@ -57,12 +57,12 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     @Override
-    public PaginatedResult getCsafDocuments() {
+    public PaginatedResult getCsafEntitiesByType(CsafEntityType entityType) {
         final Query<CsafEntity> query = pm.newQuery(CsafEntity.class);
         if(orderBy == null) query.setOrdering("csafEntryId desc");
 
         query.filter("entityType == :entityType");
-        return execute(query, CsafEntityType.DOCUMENT);
+        return execute(query, entityType);
     }
 
     /**
@@ -101,6 +101,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
         csaf.setName(name);
         csaf.setUrl(url);
         csaf.setEnabled(enabled);
+        csaf.setEntityType(CsafEntityType.AGGREGATOR);
 
 
         return persist(csaf);

@@ -73,6 +73,16 @@ public class CsafEntity implements Serializable {
     @Column(name = "CONTENT") //jdbcType = "BLOB"
     private byte[] content;
 
+    public CsafEntity() {
+        // no args for jdo
+    }
+
+    public CsafEntity(CsafEntityType entityType, String name, String url) {
+        this.entityType = entityType;
+        this.name = name;
+        this.url = url;
+    }
+
     public long getCsafEntryId() {
         return csafEntryId;
     }

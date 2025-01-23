@@ -41,58 +41,7 @@ import io.github.resilience4j.retry.RetryConfig;
 import org.apache.commons.lang3.ClassUtils;
 import org.datanucleus.PropertyNames;
 import org.datanucleus.api.jdo.JDOQuery;
-import org.dependencytrack.model.AffectedVersionAttribution;
-import org.dependencytrack.model.Analysis;
-import org.dependencytrack.model.AnalysisComment;
-import org.dependencytrack.model.AnalysisJustification;
-import org.dependencytrack.model.AnalysisResponse;
-import org.dependencytrack.model.AnalysisState;
-import org.dependencytrack.model.AnalyzerIdentity;
-import org.dependencytrack.model.Bom;
-import org.dependencytrack.model.Classifier;
-import org.dependencytrack.model.Component;
-import org.dependencytrack.model.ComponentIdentity;
-import org.dependencytrack.model.ComponentMetaInformation;
-import org.dependencytrack.model.ComponentProperty;
-import org.dependencytrack.model.ConfigPropertyConstants;
-import org.dependencytrack.model.CsafEntity;
-import org.dependencytrack.model.DependencyMetrics;
-import org.dependencytrack.model.Epss;
-import org.dependencytrack.model.Finding;
-import org.dependencytrack.model.FindingAttribution;
-import org.dependencytrack.model.IntegrityAnalysis;
-import org.dependencytrack.model.IntegrityMatchStatus;
-import org.dependencytrack.model.IntegrityMetaComponent;
-import org.dependencytrack.model.License;
-import org.dependencytrack.model.LicenseGroup;
-import org.dependencytrack.model.NotificationPublisher;
-import org.dependencytrack.model.NotificationRule;
-import org.dependencytrack.model.Policy;
-import org.dependencytrack.model.PolicyCondition;
-import org.dependencytrack.model.PolicyViolation;
-import org.dependencytrack.model.PortfolioMetrics;
-import org.dependencytrack.model.Project;
-import org.dependencytrack.model.ProjectMetrics;
-import org.dependencytrack.model.ProjectProperty;
-import org.dependencytrack.model.Repository;
-import org.dependencytrack.model.RepositoryMetaComponent;
-import org.dependencytrack.model.RepositoryType;
-import org.dependencytrack.model.ServiceComponent;
-import org.dependencytrack.model.Tag;
-import org.dependencytrack.model.Vex;
-import org.dependencytrack.model.ViolationAnalysis;
-import org.dependencytrack.model.ViolationAnalysisComment;
-import org.dependencytrack.model.ViolationAnalysisState;
-import org.dependencytrack.model.VulnIdAndSource;
-import org.dependencytrack.model.Vulnerability;
-import org.dependencytrack.model.VulnerabilityAlias;
-import org.dependencytrack.model.VulnerabilityMetrics;
-import org.dependencytrack.model.VulnerabilityPolicyBundle;
-import org.dependencytrack.model.VulnerabilityScan;
-import org.dependencytrack.model.VulnerableSoftware;
-import org.dependencytrack.model.WorkflowState;
-import org.dependencytrack.model.WorkflowStatus;
-import org.dependencytrack.model.WorkflowStep;
+import org.dependencytrack.model.*;
 import org.dependencytrack.notification.NotificationScope;
 import org.dependencytrack.notification.publisher.PublisherClass;
 import org.dependencytrack.proto.vulnanalysis.v1.ScanResult;
@@ -1300,12 +1249,8 @@ public class QueryManager extends AlpineQueryManager {
         getMetricsQueryManager().deleteMetrics(component);
     }
 
-    public PaginatedResult getCsafEntities() {
-        return getCsafQueryManager().getCsafEntities();
-    }
-
-    public PaginatedResult getCsafDocuments() {
-        return getCsafQueryManager().getCsafDocuments();
+    public PaginatedResult getCsafEntitiesByType(CsafEntityType entityType) {
+        return getCsafQueryManager().getCsafEntitiesByType(entityType);
     }
 
     public List<CsafEntity> getAllCsafEntities() {

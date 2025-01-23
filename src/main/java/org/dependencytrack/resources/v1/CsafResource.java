@@ -233,7 +233,7 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
     public Response getCsafEntities() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            final PaginatedResult result = qm.getCsafEntities();
+            final PaginatedResult result = qm.getCsafEntitiesByType(CsafEntityType.AGGREGATOR);
             return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
         }
     }
@@ -375,9 +375,14 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
     public Response getDiscoveredCsafSources() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafEntities();
-            final PaginatedResult result = results;
-            return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
+            var results = qm.getCsafEntitiesByType(CsafEntityType.DISCOVERED_SOURCE);
+
+            // Add default suggestions
+            var bsiWid = new CsafEntity(CsafEntityType.DISCOVERED_SOURCE, "BSI WID (hardcoded sample)", "https://wid.cert-bund.de/");
+            results.getObjects().add(bsiWid);
+            results.setTotal(results.getObjects().size());
+
+            return Response.ok(results.getObjects()).header(TOTAL_COUNT_HEADER, results.getTotal()).build();
         }
     }
 
@@ -393,7 +398,7 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
     public Response getCsafDocuments() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafDocuments();
+            var results = qm.getCsafEntitiesByType(CsafEntityType.DOCUMENT);
             return Response.ok(results.getObjects()).header(TOTAL_COUNT_HEADER, results.getTotal()).build();
         }
     }
