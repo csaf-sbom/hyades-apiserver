@@ -8,6 +8,7 @@ import javax.jdo.Query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.model.CsafEntity;
+import org.dependencytrack.model.CsafEntityType;
 import org.dependencytrack.model.Repository;
 
 import alpine.common.logging.Logger;
@@ -95,7 +96,17 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
         return persist(csaf);
     }
 
-     /**
+    @Override
+    public CsafEntity createCsafFileEntity(String name, byte[] contents, boolean enabled) {
+        final var csaf = new CsafEntity();
+        csaf.setEntityType(CsafEntityType.DOCUMENT);
+        csaf.setName(name);
+        csaf.setContent(contents);
+        csaf.setEnabled(enabled);
+        return persist(csaf);
+    }
+
+    /**
      * Updates an existing CSAF entity.
      *
      * @oaram csafEntryId ID of the CSAF source

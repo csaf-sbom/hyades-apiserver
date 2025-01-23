@@ -70,8 +70,8 @@ public class CsafEntity implements Serializable {
     private boolean enabled;
 
     @Persistent
-    @Column(name = "CONTENT", jdbcType = "LONGVARCHAR")
-    private String content;
+    @Column(name = "CONTENT") //jdbcType = "BLOB"
+    private byte[] content;
 
     public long getCsafEntryId() {
         return csafEntryId;
@@ -113,4 +113,11 @@ public class CsafEntity implements Serializable {
         this.enabled = enabled;
     }
 
+    public byte[] getContent() {
+        return content;
+    }
+
+    public void setContent(byte[] content) {
+        this.content = content;
+    }
 }
