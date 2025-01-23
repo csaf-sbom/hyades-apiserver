@@ -52,7 +52,17 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
             final String filterString = ".*" + filter.toLowerCase() + ".*";
             return execute(query, filterString);
         }*/
+
         return execute(query);
+    }
+
+    @Override
+    public PaginatedResult getCsafDocuments() {
+        final Query<CsafEntity> query = pm.newQuery(CsafEntity.class);
+        if(orderBy == null) query.setOrdering("csafEntryId desc");
+
+        query.filter("entityType == :entityType");
+        return execute(query, CsafEntityType.DOCUMENT);
     }
 
     /**

@@ -337,28 +337,6 @@ public class CsafResource extends AlpineResource {
         }
     }
 
-    @POST
-    @Path("/fileupload")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadFile(
-            @FormDataParam("file") InputStream uploadStream,
-            @FormDataParam("file") FormDataContentDisposition fileDetail
-    ) {
-        System.out.println(fileDetail);
-        try (var qm = new QueryManager();
-             var uploadBuffer = new ByteArrayOutputStream()) {
-
-            uploadStream.transferTo(uploadBuffer);
-
-            qm.createCsafFileEntity(fileDetail.getFileName(), uploadBuffer.toByteArray()
-                    , true);
-            return Response.ok("File uploaded successfully: " + fileDetail.getFileName()).build();
-        } catch (IOException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("File upload failed").build();
-        }
-    }
-
     @DELETE
     @Path("/{csafEntryId}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -415,62 +393,40 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
     public Response getCsafDocuments() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafEntities();
-            final PaginatedResult result = results;
-            return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
+            var results = qm.getCsafDocuments();
+            return Response.ok(results.getObjects()).header(TOTAL_COUNT_HEADER, results.getTotal()).build();
         }
     }
 
     @PUT
     @Path("/documents/")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.TEXT_PLAIN)
+    @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
     @Operation(summary = "Upload a new CSAF document", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "The created CSAF document", content = @Content(schema = @Schema(implementation = Repository.class))),
+            @ApiResponse(responseCode = "200", description = "The created CSAF document", content = @Content(schema = @Schema(implementation = Repository.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "409", description = "A repository with the specified identifier already exists")
     })
-    @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
-    public Response uploadCsafDocument(CsafEntity jsonEntity) {
-        // final Validator validator = super.getValidator();
-        // failOnValidationError(
-        // validator.validateProperty(jsonRepository, "identifier"),
-        // validator.validateProperty(jsonRepository, "url")
-        // );
-        // //TODO: When the UI changes are updated then this should be a validation
-        // check as part of line 160
-        // if (jsonRepository.isAuthenticationRequired() == null) {
-        // jsonRepository.setAuthenticationRequired(false);
-        // }
-        try (QueryManager qm = new QueryManager()) {
-            // qm.reposityEx
-            // final boolean exists = qm.repositoryExist(jsonRepository.getType(),
-            // StringUtils.trimToNull(jsonRepository.getIdentifier()));
-            // if (!exists) {
-            /*
-             * final Repository repository = qm.createRepository(
-             * jsonRepository.getType(),
-             * StringUtils.trimToNull(jsonRepository.getIdentifier()),
-             * StringUtils.trimToNull(jsonRepository.getUrl()),
-             * jsonRepository.isEnabled(),
-             * jsonRepository.isInternal(),
-             * jsonRepository.isAuthenticationRequired(),
-             * jsonRepository.getUsername(), jsonRepository.getPassword());
-             *
-             * return Response.status(Response.Status.CREATED).entity(repository).build();
-             */
-            // } else {
-            // return Response.status(Response.Status.CONFLICT).entity("A repository with
-            // the specified identifier already exists.").build();
-            // }
-            // final CsafEntity csafEntity = qm.createCsafEntity(jsonEntity.getName(),
-            // jsonEntity.getUrl(), jsonEntity.isEnabled());
-            // return Response.status(Response.Status.CREATED).entity(csafEntity).build();
-            return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+    public Response uploadCsafDocument(
+            @FormDataParam("file") InputStream uploadStream,
+            @FormDataParam("file") FormDataContentDisposition fileDetail
+    ) {
+        System.out.println(fileDetail);
+        try (var qm = new QueryManager();
+             var uploadBuffer = new ByteArrayOutputStream()) {
+
+            uploadStream.transferTo(uploadBuffer);
+
+            qm.createCsafFileEntity(fileDetail.getFileName(), uploadBuffer.toByteArray()
+                    , true);
+            return Response.ok("File uploaded successfully: " + fileDetail.getFileName()).build();
+        } catch (IOException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("File upload failed").build();
         }
     }
-
 
     @POST
     @Path("/documents/")

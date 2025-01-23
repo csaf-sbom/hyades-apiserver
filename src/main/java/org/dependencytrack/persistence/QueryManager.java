@@ -1304,6 +1304,10 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().getCsafEntities();
     }
 
+    public PaginatedResult getCsafDocuments() {
+        return getCsafQueryManager().getCsafDocuments();
+    }
+
     public List<CsafEntity> getAllCsafEntities() {
         return getCsafQueryManager().getAllCsafEntities();
     }
