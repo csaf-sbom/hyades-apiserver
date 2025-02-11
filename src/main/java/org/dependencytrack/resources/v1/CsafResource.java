@@ -401,7 +401,7 @@ public class CsafResource extends AlpineResource {
     }
 
     @DELETE
-    @Path("/documents/{csafDocumentId}")
+    @Path("/documents/{csafEntryId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Deletes a CSAF source", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
@@ -425,6 +425,27 @@ public class CsafResource extends AlpineResource {
                         entity("The csafEntryId of the CSAF source could not be found.").build();
             }
         }
+    }
 
+    @GET
+    @Path("/documents/{csafEntryId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
+    @Operation(summary = "Returns the contents of a CSAF document", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "The content of a document"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PermissionRequired({Permissions.Constants.CSAF_MANAGEMENT})
+    public Response getCsafDocumentContents(@Parameter(description = "The csafEntryId of the CSAF document to view", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("csafEntryId") String csafEntryId) {
+        try (QueryManager qm = new QueryManager()) {
+            final var csafEntity = qm.getObjectById(CsafEntity.class, csafEntryId);
+
+            if(csafEntity == null) {
+                return Response.status(Response.Status.NOT_FOUND).entity("The requested CSAF document could not be found.").build();
+            } else {
+                return Response.ok(new String(csafEntity.getContent())).build();
+            }
+        }
     }
 }
