@@ -2,6 +2,8 @@ package org.dependencytrack.model;
 
 public enum CsafEntityType {
     AGGREGATOR,
+    PROVIDER,
     DOCUMENT,
-    DISCOVERED_SOURCE
+    DISCOVERED_AGGREGATOR,
+    DISCOVERED_PROVIDER
 }

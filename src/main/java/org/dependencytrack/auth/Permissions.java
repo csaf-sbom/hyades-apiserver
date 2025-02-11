@@ -63,7 +63,7 @@ public enum Permissions {
     POLICY_MANAGEMENT_DELETE("Allows the deletion of a policy"),
     TAG_MANAGEMENT("Allows the modification and deletion of tags"),
     TAG_MANAGEMENT_DELETE("Allows the deletion of a tag"),
-    VIEW_BADGES("Provides the ability to view badges");
+    VIEW_BADGES("Provides the ability to view badges"),
     CSAF_MANAGEMENT("Allows configuration of CSAF resources");
 
     private final String description;
