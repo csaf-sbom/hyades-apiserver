@@ -73,6 +73,14 @@ public class CsafEntity implements Serializable {
     @Column(name = "CONTENT") //jdbcType = "BLOB"
     private byte[] content;
 
+    @Persistent
+    @Column(name = "SEEN")
+    private boolean seen;
+
+    @Persistent
+    @Column(name = "FETCHINTERVAL")
+    private int fetchInterval;
+
     public CsafEntity() {
         // no args for jdo
     }
@@ -129,5 +137,21 @@ public class CsafEntity implements Serializable {
 
     public void setContent(byte[] content) {
         this.content = content;
+    }
+
+    public boolean isSeen() {
+        return seen;
+    }
+
+    public void setSeen(boolean seen) {
+        this.seen = seen;
+    }
+
+    public int getFetchInterval() {
+        return fetchInterval;
+    }
+
+    public void setFetchInterval(int fetchInterval) {
+        this.fetchInterval = fetchInterval;
     }
 }
