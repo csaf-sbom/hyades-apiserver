@@ -5,8 +5,5 @@ export ALPINE_DATABASE_USERNAME="dtrack"
 export ALPINE_DATABASE_PASSWORD="dtrack"
 export ALPINE_METRICS_ENABLED="true"
 #export ALPINE_SECRET_KEY_PATH="/var/run/secrets/secret.key"
-export KAFKA_BOOTSTRAP_SERVERS="localhost:9092" # OUTSIDE://
-export INTEGRITY_CHECK_ENABLED="true"
-export INIT_TASKS_ENABLED="false"
-mvn -Djetty.reload=automatic -Djetty.scanIntervalSeconds=3 jetty:run -P enhance -Dlogback.configurationFile=src/main/docker/logback.xml -Dcheckstyle.skip
-#-Ddatanucleus.schema.autoCreateAll=true?
+export KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
+mvn jetty:run -Dcheckstyle.skip -Dlogback.configurationFile=src/main/docker/logback.xml
