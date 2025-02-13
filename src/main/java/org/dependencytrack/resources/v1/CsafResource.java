@@ -18,38 +18,8 @@
  */
 package org.dependencytrack.resources.v1;
 
-import static alpine.event.framework.Event.isEventBeingProcessed;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.StandardCopyOption;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.dependencytrack.auth.Permissions;
-import org.dependencytrack.common.ConfigKey;
-import org.dependencytrack.event.VulnerabilityPolicyFetchEvent;
-import org.dependencytrack.model.*;
-import org.dependencytrack.model.validation.ValidUuid;
-import org.dependencytrack.persistence.QueryManager;
-import org.dependencytrack.policy.vulnerability.VulnerabilityPolicyProvider;
-import org.dependencytrack.policy.vulnerability.VulnerabilityPolicyProviderFactory;
-import org.dependencytrack.resources.v1.openapi.PaginatedApi;
-import org.dependencytrack.resources.v1.vo.BomUploadResponse;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.postgresql.util.PSQLException;
-import org.postgresql.util.PSQLState;
-
-import alpine.Config;
 import alpine.common.logging.Logger;
-import alpine.event.framework.Event;
 import alpine.persistence.PaginatedResult;
-import alpine.security.crypto.DataEncryption;
 import alpine.server.auth.PermissionRequired;
 import alpine.server.resources.AlpineResource;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,10 +33,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -75,6 +43,19 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.lang3.StringUtils;
+import org.dependencytrack.auth.Permissions;
+import org.dependencytrack.model.CsafEntity;
+import org.dependencytrack.model.CsafEntityType;
+import org.dependencytrack.model.Repository;
+import org.dependencytrack.persistence.QueryManager;
+import org.dependencytrack.resources.v1.openapi.PaginatedApi;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Resource for vulnerability policies.
@@ -87,7 +68,6 @@ import jakarta.ws.rs.core.Response;
 })
 public class CsafResource extends AlpineResource {
     private static final Logger LOGGER = Logger.getLogger(CsafResource.class);
-
 
     @GET
     @Path("/aggregators/")
