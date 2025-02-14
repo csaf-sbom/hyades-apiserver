@@ -45,11 +45,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.auth.Permissions;
+import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.model.CsafEntity;
 import org.dependencytrack.model.CsafEntityType;
 import org.dependencytrack.model.Repository;
 import org.dependencytrack.persistence.QueryManager;
 import org.dependencytrack.resources.v1.openapi.PaginatedApi;
+import org.dependencytrack.tasks.CsafMirrorTask;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -68,6 +70,21 @@ import java.io.InputStream;
 })
 public class CsafResource extends AlpineResource {
     private static final Logger LOGGER = Logger.getLogger(CsafResource.class);
+
+    @POST
+    @Path("/trigger-mirror/")
+    @Operation(summary = "Triggers the CSAF mirror task manually", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "The CSAF mirror task has been triggered"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
+    public Response triggerMirror() {
+        var mirror = new CsafMirrorTask();
+        mirror.inform(new CsafMirrorEvent());
+
+        return null;
+    }
 
     @GET
     @Path("/aggregators/")
