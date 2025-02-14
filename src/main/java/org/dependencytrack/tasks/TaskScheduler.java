@@ -22,7 +22,7 @@ import alpine.event.LdapSyncEvent;
 import alpine.event.framework.Event;
 import alpine.server.tasks.LdapSyncTask;
 import com.asahaf.javacron.Schedule;
-import org.dependencytrack.event.CSAFMirrorEvent;
+import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.event.DefectDojoUploadEventAbstract;
 import org.dependencytrack.event.EpssMirrorEvent;
 import org.dependencytrack.event.FortifySscUploadEventAbstract;
@@ -83,7 +83,7 @@ public final class TaskScheduler extends BaseTaskScheduler {
                 Map.entry(new LdapSyncEvent(), getCronScheduleForTask(LdapSyncTask.class)),
                 Map.entry(new NistMirrorEvent(), getCronScheduleForTask(NistMirrorTask.class)),
                 Map.entry(new OsvMirrorEvent(null), getCronScheduleForTask(OsvMirrorTask.class)),
-                Map.entry(new CSAFMirrorEvent(), getCronScheduleForTask(CSAFMirrorTask.class)),
+                Map.entry(new CsafMirrorEvent(), getCronScheduleForTask(CsafMirrorTask.class)),
                 Map.entry(new GitHubAdvisoryMirrorEvent(), getCronScheduleForTask(GitHubAdvisoryMirrorTask.class)),
                 Map.entry(new EpssMirrorEvent(), getCronScheduleForTask(EpssMirrorTask.class)),
                 Map.entry(new PortfolioMetricsUpdateEvent(), getCronScheduleForTask(PortfolioMetricsUpdateTask.class)),

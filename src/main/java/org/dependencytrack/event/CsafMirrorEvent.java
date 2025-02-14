@@ -26,5 +26,5 @@ import alpine.event.framework.Event;
  * @author Lawrence Dean
  * TODO: -at-since 3.0.0 introduce API version
  */
-public class CSAFMirrorEvent implements Event {
+public class CsafMirrorEvent implements Event {
 }

@@ -22,22 +22,21 @@ import alpine.common.logging.Logger;
 import alpine.event.framework.Event;
 import alpine.event.framework.LoggableSubscriber;
 import alpine.model.ConfigProperty;
-
-import org.dependencytrack.event.CSAFMirrorEvent;
+import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.event.kafka.KafkaEventDispatcher;
 import org.dependencytrack.persistence.QueryManager;
 
 import static org.dependencytrack.model.ConfigPropertyConstants.VULNERABILITY_SOURCE_CSAF_ENABLED;
 
-public class CSAFMirrorTask implements LoggableSubscriber {
+public class CsafMirrorTask implements LoggableSubscriber {
 
-    private static final Logger LOGGER = Logger.getLogger(CSAFMirrorTask.class);
+    private static final Logger LOGGER = Logger.getLogger(CsafMirrorTask.class);
 
     /**
      * {@inheritDoc}
      */
     public void inform(final Event e) {
-        if (e instanceof CSAFMirrorEvent) {
+        if (e instanceof CsafMirrorEvent) {
             try (final QueryManager qm = new QueryManager()) {
                 final ConfigProperty enabled = qm.getConfigProperty(VULNERABILITY_SOURCE_CSAF_ENABLED.getGroupName(), VULNERABILITY_SOURCE_CSAF_ENABLED.getPropertyName());
                 final boolean isEnabled = enabled != null && Boolean.valueOf(enabled.getPropertyValue());
@@ -48,7 +47,7 @@ public class CSAFMirrorTask implements LoggableSubscriber {
 
                 final long start = System.currentTimeMillis();
                 LOGGER.info("Starting CSAF mirroring task");
-                new KafkaEventDispatcher().dispatchEvent(new CSAFMirrorEvent()).join();
+                new KafkaEventDispatcher().dispatchEvent(new CsafMirrorEvent()).join();
                 final long end = System.currentTimeMillis();
                 LOGGER.info("CSAF mirroring complete. Time spent (total): " + (end - start) + "ms");
             } catch (Exception ex) {
