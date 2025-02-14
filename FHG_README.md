@@ -36,7 +36,15 @@ Run locally using fhgrun.sh: maven jetty plugin+config
 ./fhgrun.sh
 ```
 
-NOTE: MISSING CREATE STATEMENT FOR CSAF_MANAGEMENT and ._READ rights!
+## Allow access to API endpoints
+Create the CSAF_MANAGEMENT permission
+```
+docker compose exec postgres psql -U dtrack -d dtrack -c "INSERT INTO \"PERMISSION\" (\"DESCRIPTION\", \"NAME\") VALUES ('CSAF Management permission', 'CSAF_MANAGEMENT');"
+```
+
+Add CSAF_MANAGEMENT to your DT user:
+```Administration -> Access Management -> Managed Users```
+
 
 ## Launch frontend
 Clone frontend
