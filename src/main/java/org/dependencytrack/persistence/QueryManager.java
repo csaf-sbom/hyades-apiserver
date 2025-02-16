@@ -1313,7 +1313,7 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().createCsafEntity(name, url, enabled);
     }
 
-    public CsafEntity createCsafFileEntity(String name, byte[] contents, boolean enabled) {
+    public CsafEntity createCsafFileEntity(String name, String contents, boolean enabled) {
         return getCsafQueryManager().createCsafFileEntity(name, contents, enabled);
     }
 

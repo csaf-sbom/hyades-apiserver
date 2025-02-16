@@ -26,11 +26,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-import javax.jdo.annotations.Column;
-import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
+import javax.jdo.annotations.*;
 import java.io.Serializable;
 
 /**
@@ -66,9 +62,9 @@ public class CsafEntity implements Serializable {
     @NotNull
     private boolean enabled;
 
-    @Persistent
-    @Column(name = "CONTENT") //jdbcType = "BLOB"
-    private byte[] content;
+    @Persistent(defaultFetchGroup = "false")
+    @Column(name = "CONTENT", jdbcType = "CLOB")
+    private String content;
 
     @Persistent
     @Column(name = "SEEN")
@@ -128,11 +124,11 @@ public class CsafEntity implements Serializable {
         this.enabled = enabled;
     }
 
-    public byte[] getContent() {
+    public String getContent() {
         return content;
     }
 
-    public void setContent(byte[] content) {
+    public void setContent(String content) {
         this.content = content;
     }
 

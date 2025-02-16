@@ -120,7 +120,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     @Override
-    public CsafEntity createCsafFileEntity(String name, byte[] contents, boolean enabled) {
+    public CsafEntity createCsafFileEntity(String name, String contents, boolean enabled) {
         final var csaf = new CsafEntity();
         csaf.setEntityType(CsafEntityType.DOCUMENT);
         csaf.setName(name);

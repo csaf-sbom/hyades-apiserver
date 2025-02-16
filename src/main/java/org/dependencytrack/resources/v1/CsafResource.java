@@ -43,6 +43,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jnr.ffi.Struct;
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.CsafMirrorEvent;
@@ -58,6 +59,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 
 /**
  * Resource for vulnerability policies.
@@ -350,11 +352,9 @@ public class CsafResource extends AlpineResource {
         System.out.println(fileDetail);
         try (var qm = new QueryManager();
              var uploadBuffer = new ByteArrayOutputStream()) {
-
             uploadStream.transferTo(uploadBuffer);
-
-            qm.createCsafFileEntity(fileDetail.getFileName(), uploadBuffer.toByteArray()
-                    , true);
+            String content = uploadBuffer.toString();
+            qm.createCsafFileEntity(fileDetail.getFileName(), content, true);
             return Response.ok("File uploaded successfully: " + fileDetail.getFileName()).build();
         } catch (IOException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
