@@ -30,21 +30,18 @@ import javax.jdo.annotations.*;
 import java.io.Serializable;
 
 /**
- * Model for configured CSAF source Entities.
+ * Model for configured CSAF document entities.
  *
- * 
+ *
  * @since 5.6.0 //TODO set when merged
  */
 @PersistenceCapable
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CsafEntity implements Serializable {
+public class CsafDocumentEntity implements Serializable {
 
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.NATIVE)
-    private long csafEntryId;
-
-    @Persistent(name = "TYPE")
-    private CsafEntityType entityType;
+    private long entryId;
 
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
     @Pattern(regexp = RegexSequence.Definition.PRINTABLE_CHARS, message = "The name may only contain printable characters")
@@ -71,33 +68,32 @@ public class CsafEntity implements Serializable {
     private boolean seen;
 
     @Persistent
+    @Column(name = "LASTFETCHED")
+    private long lastFetched;
+
+    @Persistent
     @Column(name = "FETCHINTERVAL")
     private int fetchInterval;
 
-    public CsafEntity() {
+    @Persistent
+    @Column(name = "DISCOVERY")
+    private boolean discovery;
+
+    public CsafDocumentEntity() {
         // no args for jdo
     }
 
-    public CsafEntity(CsafEntityType entityType, String name, String url) {
-        this.entityType = entityType;
+    public CsafDocumentEntity(String name, String url) {
         this.name = name;
         this.url = url;
     }
 
-    public long getCsafEntryId() {
-        return csafEntryId;
+    public long getEntryId() {
+        return entryId;
     }
 
-    public CsafEntityType getEntityType() {
-        return entityType;
-    }
-
-    public void setEntityType(CsafEntityType entityType) {
-        this.entityType = entityType;
-    }
-
-    public void setCsafEntryId(long csafEntryId) {
-        this.csafEntryId = csafEntryId;
+    public void setEntryId(long entryId) {
+        this.entryId = entryId;
     }
 
     public String getName() {
@@ -140,11 +136,27 @@ public class CsafEntity implements Serializable {
         this.seen = seen;
     }
 
+    public long getLastFetched() {
+        return lastFetched;
+    }
+
+    public void setLastFetched(long lastFetched) {
+        this.lastFetched = lastFetched;
+    }
+
     public int getFetchInterval() {
         return fetchInterval;
     }
 
     public void setFetchInterval(int fetchInterval) {
         this.fetchInterval = fetchInterval;
+    }
+
+    public boolean isDiscovery() {
+        return discovery;
+    }
+
+    public void setDiscovery(boolean discovery) {
+        this.discovery = discovery;
     }
 }

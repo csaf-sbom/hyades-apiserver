@@ -47,8 +47,9 @@ import jnr.ffi.Struct;
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.CsafMirrorEvent;
-import org.dependencytrack.model.CsafEntity;
-import org.dependencytrack.model.CsafEntityType;
+import org.dependencytrack.model.CsafAggregatorEntity;
+import org.dependencytrack.model.CsafDocumentEntity;
+import org.dependencytrack.model.CsafProviderEntity;
 import org.dependencytrack.model.Repository;
 import org.dependencytrack.persistence.QueryManager;
 import org.dependencytrack.resources.v1.openapi.PaginatedApi;
@@ -94,13 +95,13 @@ public class CsafResource extends AlpineResource {
     @Operation(summary = "Returns a list of CSAF aggregators", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
     @PaginatedApi
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "A list of CSAF entities", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF entities", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafEntity.class)))),
+            @ApiResponse(responseCode = "200", description = "A list of CSAF entities", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF entities", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafAggregatorEntity.class)))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getCsafAggregators() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            final PaginatedResult result = qm.getCsafEntitiesByType(CsafEntityType.AGGREGATOR);
+            final PaginatedResult result = qm.getCsafAggregators();
             return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
         }
     }
@@ -116,9 +117,9 @@ public class CsafResource extends AlpineResource {
             @ApiResponse(responseCode = "409", description = "An aggregator with the specified identifier already exists")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
-    public Response createCsafAggregator(CsafEntity jsonEntity) {
+    public Response createCsafAggregator(CsafAggregatorEntity jsonEntity) {
         try (QueryManager qm = new QueryManager()) {
-            final CsafEntity csafEntity = qm.createCsafEntity(jsonEntity.getName(), jsonEntity.getUrl(),
+            final CsafAggregatorEntity csafEntity = qm.createCsafAggregator(jsonEntity.getName(), jsonEntity.getUrl(),
                     jsonEntity.isEnabled());
             return Response.status(Response.Status.CREATED).entity(csafEntity).build();
         } catch (Exception e) {
@@ -137,7 +138,7 @@ public class CsafResource extends AlpineResource {
             @ApiResponse(responseCode = "404", description = "The csafEntryId of the aggregator could not be found")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT) // TODO create update only permission
-    public Response updateCsafAggregator(CsafEntity jsonEntity) {
+    public Response updateCsafAggregator(CsafAggregatorEntity jsonEntity) {
         /*
          * final Validator validator = super.getValidator(); // TODO validate
          * failOnValidationError(validator.validateProperty(jsonRepository,
@@ -151,7 +152,7 @@ public class CsafResource extends AlpineResource {
          * }
          */
         try (QueryManager qm = new QueryManager()) {
-            CsafEntity csafEntity = qm.getObjectById(CsafEntity.class, jsonEntity.getCsafEntryId());
+            CsafAggregatorEntity csafEntity = qm.getObjectById(CsafAggregatorEntity.class, jsonEntity.getEntryId());
             if (csafEntity != null) {
                 final String url = StringUtils.trimToNull(jsonEntity.getUrl());
                 try {
@@ -163,7 +164,7 @@ public class CsafResource extends AlpineResource {
                      * ? DataEncryption.encryptAsString(jsonRepository.getPassword())
                      * : repository.getPassword();
                      */
-                    csafEntity = qm.updateCsafEntity(jsonEntity.getCsafEntryId(), jsonEntity.getName(),
+                    csafEntity = qm.updateCsafAggregator(jsonEntity.getEntryId(), jsonEntity.getName(),
                             jsonEntity.getUrl(), jsonEntity.isEnabled());
 
                     return Response.ok(csafEntity).build();
@@ -193,7 +194,7 @@ public class CsafResource extends AlpineResource {
             @Parameter(description = "The csafEntryId of the CSAF source to delete", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("csafEntryId") String csafEntryId) {
         try (QueryManager qm = new QueryManager()) {
 
-            final CsafEntity csafEntity = qm.getObjectById(CsafEntity.class, csafEntryId);
+            final CsafAggregatorEntity csafEntity = qm.getObjectById(CsafAggregatorEntity.class, csafEntryId);
             if (csafEntity != null) {
                 qm.delete(csafEntity);
                 return Response.status(Response.Status.NO_CONTENT).build();
@@ -210,13 +211,13 @@ public class CsafResource extends AlpineResource {
     @Operation(summary = "Returns a list of CSAF providers", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
     @PaginatedApi
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "A list of CSAF providers", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF entities", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafEntity.class)))),
+            @ApiResponse(responseCode = "200", description = "A list of CSAF providers", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF entities", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafProviderEntity.class)))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getCsafProviders() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            final PaginatedResult result = qm.getCsafEntitiesByType(CsafEntityType.PROVIDER);
+            final PaginatedResult result = qm.getCsafProviders();
             return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
         }
     }
@@ -232,9 +233,9 @@ public class CsafResource extends AlpineResource {
             @ApiResponse(responseCode = "409", description = "An provider with the specified identifier already exists")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
-    public Response createCsafProvider(CsafEntity jsonEntity) {
+    public Response createCsafProvider(CsafProviderEntity jsonEntity) {
         try (QueryManager qm = new QueryManager()) {
-            final CsafEntity csafEntity = qm.createCsafEntity(jsonEntity.getName(), jsonEntity.getUrl(),
+            final CsafProviderEntity csafEntity = qm.createCsafProvider(jsonEntity.getName(), jsonEntity.getUrl(),
                     jsonEntity.isEnabled());
             return Response.status(Response.Status.CREATED).entity(csafEntity).build();
         } catch (Exception e) {
@@ -253,7 +254,7 @@ public class CsafResource extends AlpineResource {
             @ApiResponse(responseCode = "404", description = "The csafEntityId of the provider could not be found")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT) // TODO create update only permission
-    public Response updateCsafProvider(CsafEntity jsonEntity) {
+    public Response updateCsafProvider(CsafProviderEntity jsonEntity) {
         /*
          * final Validator validator = super.getValidator(); // TODO validate
          * failOnValidationError(validator.validateProperty(jsonRepository,
@@ -267,7 +268,7 @@ public class CsafResource extends AlpineResource {
          * }
          */
         try (QueryManager qm = new QueryManager()) {
-            CsafEntity csafEntity = qm.getObjectById(CsafEntity.class, jsonEntity.getCsafEntryId());
+            CsafProviderEntity csafEntity = qm.getObjectById(CsafProviderEntity.class, jsonEntity.getEntryId());
             if (csafEntity != null) {
                 final String url = StringUtils.trimToNull(jsonEntity.getUrl());
                 try {
@@ -279,7 +280,7 @@ public class CsafResource extends AlpineResource {
                      * ? DataEncryption.encryptAsString(jsonRepository.getPassword())
                      * : repository.getPassword();
                      */
-                    csafEntity = qm.updateCsafEntity(jsonEntity.getCsafEntryId(), jsonEntity.getName(),
+                    csafEntity = qm.updateCsafProvider(jsonEntity.getEntryId(), jsonEntity.getName(),
                             jsonEntity.getUrl(), jsonEntity.isEnabled());
 
                     return Response.ok(csafEntity).build();
@@ -300,16 +301,17 @@ public class CsafResource extends AlpineResource {
     @Operation(summary = "Returns a list of discovered CSAF sources", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
     @PaginatedApi
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "A list of discovered CSAF sources", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of discovered CSAF sources", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafEntity.class)))),
+            @ApiResponse(responseCode = "200", description = "A list of discovered CSAF sources", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of discovered CSAF sources", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafAggregatorEntity.class)))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getDiscoveredCsafSources() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafEntitiesByType(CsafEntityType.DISCOVERED_AGGREGATOR);
+            var results = qm.getCsafAggregators(); // TODO filter discoveries
 
             // TODO Add default suggestions
-            var bsiWid = new CsafEntity(CsafEntityType.DISCOVERED_AGGREGATOR, "BSI WID (hardcoded sample)", "https://wid.cert-bund.de/");
+            var bsiWid = new CsafAggregatorEntity("BSI WID (hardcoded sample)", "https://wid.cert-bund.de/");
+            bsiWid.setDiscovery(true);
             results.getObjects().add(bsiWid);
             results.setTotal(results.getObjects().size());
 
@@ -323,13 +325,13 @@ public class CsafResource extends AlpineResource {
     @Operation(summary = "Returns a list of CSAF documents", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
     @PaginatedApi
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "A list of CSAF documents", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF documents", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafEntity.class)))),
+            @ApiResponse(responseCode = "200", description = "A list of CSAF documents", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF documents", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafDocumentEntity.class)))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getCsafDocuments() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafEntitiesByType(CsafEntityType.DOCUMENT);
+            var results = qm.getCsafDocuments();
             return Response.ok(results.getObjects()).header(TOTAL_COUNT_HEADER, results.getTotal()).build();
         }
     }
@@ -349,12 +351,11 @@ public class CsafResource extends AlpineResource {
             @FormDataParam("file") InputStream uploadStream,
             @FormDataParam("file") FormDataContentDisposition fileDetail
     ) {
-        System.out.println(fileDetail);
         try (var qm = new QueryManager();
              var uploadBuffer = new ByteArrayOutputStream()) {
             uploadStream.transferTo(uploadBuffer);
             String content = uploadBuffer.toString();
-            qm.createCsafFileEntity(fileDetail.getFileName(), content, true);
+            qm.createCsafDocumentFromFile(fileDetail.getFileName(), content, true);
             return Response.ok("File uploaded successfully: " + fileDetail.getFileName()).build();
         } catch (IOException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -373,16 +374,16 @@ public class CsafResource extends AlpineResource {
             @ApiResponse(responseCode = "404", description = "The UUID of the repository could not be found")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT) // TODO create update only permission
-    public Response updateCsafDocument(CsafEntity jsonEntity) {
+    public Response updateCsafDocument(CsafDocumentEntity jsonEntity) {
 
         try (QueryManager qm = new QueryManager()) {
-            CsafEntity csafEntity = qm.getObjectById(CsafEntity.class,
-                    jsonEntity.getCsafEntryId());
+            CsafDocumentEntity csafEntity = qm.getObjectById(CsafDocumentEntity.class,
+                    jsonEntity.getEntryId());
             if (csafEntity != null) {
                 final String url = StringUtils.trimToNull(jsonEntity.getUrl());
                 try {
 
-                    csafEntity = qm.updateCsafEntity(jsonEntity.getCsafEntryId(),
+                    csafEntity = qm.updateCsafDocument(jsonEntity.getEntryId(),
                             jsonEntity.getName(), jsonEntity.getUrl(), jsonEntity.isEnabled());
 
                     return Response.ok(csafEntity).build();
@@ -412,7 +413,7 @@ public class CsafResource extends AlpineResource {
             @Parameter(description = "The csafEntryId of the CSAF source to delete", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("csafEntryId") String csafEntryId) {
 
         try (QueryManager qm = new QueryManager()) {
-            final CsafEntity csafEntity = qm.getObjectById(CsafEntity.class,
+            final CsafDocumentEntity csafEntity = qm.getObjectById(CsafDocumentEntity.class,
                     csafEntryId);
             if (csafEntity != null) {
                 qm.delete(csafEntity);
@@ -436,12 +437,12 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getCsafDocumentContents(@Parameter(description = "The csafEntryId of the CSAF document to view", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("csafEntryId") String csafEntryId) {
         try (QueryManager qm = new QueryManager()) {
-            final var csafEntity = qm.getObjectById(CsafEntity.class, csafEntryId);
+            final var csafEntity = qm.getObjectById(CsafDocumentEntity.class, csafEntryId);
 
             if(csafEntity == null) {
                 return Response.status(Response.Status.NOT_FOUND).entity("The requested CSAF document could not be found.").build();
             } else {
-                return Response.ok(new String(csafEntity.getContent())).build();
+                return Response.ok(csafEntity.getContent()).build();
             }
         }
     }
