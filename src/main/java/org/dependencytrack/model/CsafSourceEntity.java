@@ -37,7 +37,7 @@ import java.io.Serializable;
  */
 @PersistenceCapable
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CsafAggregatorEntity implements Serializable {
+public class CsafSourceEntity implements Serializable {
 
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.NATIVE)
@@ -76,14 +76,18 @@ public class CsafAggregatorEntity implements Serializable {
     private int fetchInterval;
 
     @Persistent
+    @Column(name = "AGGREGATOR")
+    private boolean aggregator;
+
+    @Persistent
     @Column(name = "DISCOVERY")
     private boolean discovery;
 
-    public CsafAggregatorEntity() {
+    public CsafSourceEntity() {
         // no args for jdo
     }
 
-    public CsafAggregatorEntity(String name, String url) {
+    public CsafSourceEntity(String name, String url) {
         this.name = name;
         this.url = url;
     }
@@ -150,6 +154,15 @@ public class CsafAggregatorEntity implements Serializable {
 
     public void setFetchInterval(int fetchInterval) {
         this.fetchInterval = fetchInterval;
+    }
+
+
+    public boolean isAggregator() {
+        return aggregator;
+    }
+
+    public void setAggregator(boolean aggregator) {
+        this.aggregator = aggregator;
     }
 
     public boolean isDiscovery() {

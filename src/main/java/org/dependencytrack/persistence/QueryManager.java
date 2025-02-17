@@ -39,7 +39,6 @@ import com.google.common.collect.Lists;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.datanucleus.PropertyNames;
 import org.datanucleus.api.jdo.JDOQuery;
 import org.dependencytrack.model.*;
@@ -1250,36 +1249,24 @@ public class QueryManager extends AlpineQueryManager {
         getMetricsQueryManager().deleteMetrics(component);
     }
 
-    public PaginatedResult getCsafAggregators() {
-        return getCsafQueryManager().getCsafAggregators();
+    public PaginatedResult getCsafSources(boolean aggregators) {
+        return getCsafQueryManager().getCsafSources(aggregators);
     }
 
-    public CsafAggregatorEntity createCsafAggregator(String name, String url, boolean enabled) {
-        return getCsafQueryManager().createCsafAggregator(name, url, enabled);
+    public PaginatedResult getCsafSourcesDiscoveries() {
+        return getCsafQueryManager().getCsafSourcesDiscoveries();
     }
 
-    public CsafAggregatorEntity createCsafAggregatorFromFile(String name, String contents, boolean enabled) {
-        return getCsafQueryManager().createCsafAggregatorFromFile(name, contents, enabled);
+    public CsafSourceEntity createCsafSource(String name, String url, boolean enabled, boolean aggregator) {
+        return getCsafQueryManager().createCsafSource(name, url, enabled, aggregator);
     }
 
-    public CsafAggregatorEntity updateCsafAggregator(long entryId, String name, String url, boolean enabled) {
-        return getCsafQueryManager().updateCsafAggregator(entryId, name, url, enabled);
+    public CsafSourceEntity createCsafSourceFromFile(String name, String contents, boolean enabled, boolean aggregator) {
+        return getCsafQueryManager().createCsafSourceFromFile(name, contents, enabled, aggregator);
     }
 
-    public PaginatedResult getCsafProviders() {
-        return getCsafQueryManager().getCsafProviders();
-    }
-
-    public CsafProviderEntity createCsafProvider(String name, String url, boolean enabled) {
-        return getCsafQueryManager().createCsafProvider(name, url, enabled);
-    }
-
-    public CsafProviderEntity createCsafProviderFromFile(String name, String contents, boolean enabled) {
-        return getCsafQueryManager().createCsafProviderFromFile(name, contents, enabled);
-    }
-
-    public CsafProviderEntity updateCsafProvider(long entryId, String name, String url, boolean enabled) {
-        return getCsafQueryManager().updateCsafProvider(entryId, name, url, enabled);
+    public CsafSourceEntity updateCsafSource(long entryId, String name, String url, boolean enabled) {
+        return getCsafQueryManager().updateCsafSource(entryId, name, url, enabled);
     }
 
     public PaginatedResult getCsafDocuments() {

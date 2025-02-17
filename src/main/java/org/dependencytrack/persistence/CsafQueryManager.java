@@ -21,13 +21,11 @@ package org.dependencytrack.persistence;
 import alpine.common.logging.Logger;
 import alpine.persistence.PaginatedResult;
 import alpine.resources.AlpineRequest;
-import org.dependencytrack.model.CsafAggregatorEntity;
+import org.dependencytrack.model.CsafSourceEntity;
 import org.dependencytrack.model.CsafDocumentEntity;
-import org.dependencytrack.model.CsafProviderEntity;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
-import java.util.List;
 
 public class CsafQueryManager extends QueryManager implements IQueryManager {
     private static final Logger LOGGER = Logger.getLogger(CsafQueryManager.class);
@@ -51,14 +49,32 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
 
+    /**
+     *
+     * @param aggregators true if aggregators should be fetched, false if providers are to be shown
+     * @return list of csaf sources
+     */
     @Override
-    public PaginatedResult getCsafAggregators() {
-        final Query<CsafAggregatorEntity> query = pm.newQuery(CsafAggregatorEntity.class);
+    public PaginatedResult getCsafSources(boolean aggregators) {
+        final Query<CsafSourceEntity> query = pm.newQuery(CsafSourceEntity.class);
+        query.filter("aggregator == :aggregator");
         if(orderBy == null) query.setOrdering("entryId desc");
 
-        return execute(query);
+        return execute(query, aggregators);
     }
 
+    /**
+     * Get discoveries, either aggregators or providers
+     * @return
+     */
+    @Override
+    public PaginatedResult getCsafSourcesDiscoveries() {
+        final Query<CsafSourceEntity> query = pm.newQuery(CsafSourceEntity.class);
+        query.filter("discovery == :discoveries");
+        if(orderBy == null) query.setOrdering("entryId desc");
+
+        return execute(query, true);
+    }
 
     /**
      * Creates a new CSAF Entity
@@ -68,7 +84,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      * @return the created CSAF entity
      */
     @Override
-    public CsafAggregatorEntity createCsafAggregator(String name, String url, boolean enabled) {
+    public CsafSourceEntity createCsafSource(String name, String url, boolean enabled, boolean aggregator) {
         /*if (repositoryExist(type, identifier)) { // TODO check existing
             return null;
         }
@@ -81,20 +97,22 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
                 }
             }
         }*/
-        final CsafAggregatorEntity csaf = new CsafAggregatorEntity();
+        final CsafSourceEntity csaf = new CsafSourceEntity();
         csaf.setName(name);
         csaf.setUrl(url);
         csaf.setEnabled(enabled);
+        csaf.setAggregator(aggregator);
 
         return persist(csaf);
     }
 
     @Override
-    public CsafAggregatorEntity createCsafAggregatorFromFile(String name, String contents, boolean enabled) {
-        final var csaf = new CsafAggregatorEntity();
+    public CsafSourceEntity createCsafSourceFromFile(String name, String contents, boolean enabled, boolean aggregator) {
+        final var csaf = new CsafSourceEntity();
         csaf.setName(name);
         csaf.setContent(contents);
         csaf.setEnabled(enabled);
+        csaf.setAggregator(aggregator);
         return persist(csaf);
     }
 
@@ -108,84 +126,9 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      * @return the created CSAF entity
      */
     @Override
-    public CsafAggregatorEntity updateCsafAggregator(long csafEntryId, String name, String url, boolean enabled) {
+    public CsafSourceEntity updateCsafSource(long csafEntryId, String name, String url, boolean enabled) {
         LOGGER.debug("Updating within CsafQueryManager "+csafEntryId);
-        final CsafAggregatorEntity csafEntity = getObjectById(CsafAggregatorEntity.class, csafEntryId);
-        csafEntity.setName(name);
-        csafEntity.setUrl(url);
-        /*repository.setInternal(internal);
-        repository.setAuthenticationRequired(authenticationRequired);
-        if (!authenticationRequired) {
-            repository.setUsername(null);
-            repository.setPassword(null);
-        } else {
-            repository.setUsername(username);
-            repository.setPassword(password);
-        }*/
-
-        csafEntity.setEnabled(enabled);
-        return persist(csafEntity);
-    }
-
-    @Override
-    public PaginatedResult getCsafProviders() {
-        final Query<CsafProviderEntity> query = pm.newQuery(CsafProviderEntity.class);
-        if(orderBy == null) query.setOrdering("entryId desc");
-
-        return execute(query);
-    }
-
-
-    /**
-     * Creates a new CSAF Entity
-     * @param name Name of the CSAF entity
-     * @param url URL of the configured source
-     * @param enabled True, if source should be used for mirroring
-     * @return the created CSAF entity
-     */
-    @Override
-    public CsafProviderEntity createCsafProvider(String name, String url, boolean enabled) {
-        /*if (repositoryExist(type, identifier)) { // TODO check existing
-            return null;
-        }
-        int order = 0;
-        final List<Repository> existingRepos = getAllRepositoriesOrdered(type);
-        if (existingRepos != null) {
-            for (final Repository existing : existingRepos) {
-                if (existing.getResolutionOrder() > order) {
-                    order = existing.getResolutionOrder();
-                }
-            }
-        }*/
-        final CsafProviderEntity csaf = new CsafProviderEntity();
-        csaf.setName(name);
-        csaf.setUrl(url);
-        csaf.setEnabled(enabled);
-
-        return persist(csaf);
-    }
-
-    @Override
-    public CsafProviderEntity createCsafProviderFromFile(String name, String contents, boolean enabled) {
-        final var csaf = new CsafProviderEntity();
-        csaf.setName(name);
-        csaf.setContent(contents);
-        csaf.setEnabled(enabled);
-        return persist(csaf);
-    }
-
-    /**
-     * Updates an existing CSAF entity.
-     *
-     * @param csafEntryId ID of the CSAF source
-     * @param name Name of the CSAF entity
-     * @param url URL of the configured source
-     * @param enabled True, if source should be used for mirroring
-     * @return the created CSAF entity
-     */
-    @Override
-    public CsafProviderEntity updateCsafProvider(long csafEntryId, String name, String url, boolean enabled) {
-        final CsafProviderEntity csafEntity = getObjectById(CsafProviderEntity.class, csafEntryId);
+        final CsafSourceEntity csafEntity = getObjectById(CsafSourceEntity.class, csafEntryId);
         csafEntity.setName(name);
         csafEntity.setUrl(url);
         /*repository.setInternal(internal);
