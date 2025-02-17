@@ -1267,27 +1267,35 @@ public class QueryManager extends AlpineQueryManager {
     }
 
     public PaginatedResult getCsafProviders() {
-        throw new NotImplementedException();
+        return getCsafQueryManager().getCsafProviders();
     }
 
     public CsafProviderEntity createCsafProvider(String name, String url, boolean enabled) {
-        throw new NotImplementedException();
+        return getCsafQueryManager().createCsafProvider(name, url, enabled);
+    }
+
+    public CsafProviderEntity createCsafProviderFromFile(String name, String contents, boolean enabled) {
+        return getCsafQueryManager().createCsafProviderFromFile(name, contents, enabled);
     }
 
     public CsafProviderEntity updateCsafProvider(long entryId, String name, String url, boolean enabled) {
-        throw new NotImplementedException();
+        return getCsafQueryManager().updateCsafProvider(entryId, name, url, enabled);
     }
 
     public PaginatedResult getCsafDocuments() {
-        throw new NotImplementedException();
+        return getCsafQueryManager().getCsafDocuments();
+    }
+
+    public CsafDocumentEntity createCsafDocument(String name, String url, boolean enabled) {
+        return getCsafQueryManager().createCsafDocument(name, url, enabled);
     }
 
     public CsafDocumentEntity createCsafDocumentFromFile(String fileName, String content, boolean enabled) {
-        throw new NotImplementedException();
+        return getCsafQueryManager().createCsafDocumentFromFile(fileName, content, enabled);
     }
 
     public CsafDocumentEntity updateCsafDocument(long entryId, String name, String url, boolean enabled) {
-        throw new NotImplementedException();
+        return getCsafQueryManager().updateCsafDocument(entryId, name, url, enabled);
     }
 
     public PaginatedResult getRepositories() {

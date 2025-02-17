@@ -22,6 +22,8 @@ import alpine.common.logging.Logger;
 import alpine.persistence.PaginatedResult;
 import alpine.resources.AlpineRequest;
 import org.dependencytrack.model.CsafAggregatorEntity;
+import org.dependencytrack.model.CsafDocumentEntity;
+import org.dependencytrack.model.CsafProviderEntity;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
@@ -48,24 +50,6 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
         super(pm, request);
     }
 
-    /**
-     * Returns a list of all CSAF entities.
-     *
-     * @return a List of CSAF entities
-     */
-    public PaginatedResult getCsafEntities() {
-        final Query<CsafAggregatorEntity> query = pm.newQuery(CsafAggregatorEntity.class);
-        if (orderBy == null) {
-            query.setOrdering("entryId desc");
-        }
-        /*if (filter != null) {//TODO enable filtering
-            query.setFilter("identifier.toLowerCase().matches(:identifier)");
-            final String filterString = ".*" + filter.toLowerCase() + ".*";
-            return execute(query, filterString);
-        }*/
-
-        return execute(query);
-    }
 
     @Override
     public PaginatedResult getCsafAggregators() {
@@ -83,6 +67,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      * @param enabled True, if source should be used for mirroring
      * @return the created CSAF entity
      */
+    @Override
     public CsafAggregatorEntity createCsafAggregator(String name, String url, boolean enabled) {
         /*if (repositoryExist(type, identifier)) { // TODO check existing
             return null;
@@ -122,9 +107,161 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      * @param enabled True, if source should be used for mirroring
      * @return the created CSAF entity
      */
+    @Override
     public CsafAggregatorEntity updateCsafAggregator(long csafEntryId, String name, String url, boolean enabled) {
         LOGGER.debug("Updating within CsafQueryManager "+csafEntryId);
         final CsafAggregatorEntity csafEntity = getObjectById(CsafAggregatorEntity.class, csafEntryId);
+        csafEntity.setName(name);
+        csafEntity.setUrl(url);
+        /*repository.setInternal(internal);
+        repository.setAuthenticationRequired(authenticationRequired);
+        if (!authenticationRequired) {
+            repository.setUsername(null);
+            repository.setPassword(null);
+        } else {
+            repository.setUsername(username);
+            repository.setPassword(password);
+        }*/
+
+        csafEntity.setEnabled(enabled);
+        return persist(csafEntity);
+    }
+
+    @Override
+    public PaginatedResult getCsafProviders() {
+        final Query<CsafProviderEntity> query = pm.newQuery(CsafProviderEntity.class);
+        if(orderBy == null) query.setOrdering("entryId desc");
+
+        return execute(query);
+    }
+
+
+    /**
+     * Creates a new CSAF Entity
+     * @param name Name of the CSAF entity
+     * @param url URL of the configured source
+     * @param enabled True, if source should be used for mirroring
+     * @return the created CSAF entity
+     */
+    @Override
+    public CsafProviderEntity createCsafProvider(String name, String url, boolean enabled) {
+        /*if (repositoryExist(type, identifier)) { // TODO check existing
+            return null;
+        }
+        int order = 0;
+        final List<Repository> existingRepos = getAllRepositoriesOrdered(type);
+        if (existingRepos != null) {
+            for (final Repository existing : existingRepos) {
+                if (existing.getResolutionOrder() > order) {
+                    order = existing.getResolutionOrder();
+                }
+            }
+        }*/
+        final CsafProviderEntity csaf = new CsafProviderEntity();
+        csaf.setName(name);
+        csaf.setUrl(url);
+        csaf.setEnabled(enabled);
+
+        return persist(csaf);
+    }
+
+    @Override
+    public CsafProviderEntity createCsafProviderFromFile(String name, String contents, boolean enabled) {
+        final var csaf = new CsafProviderEntity();
+        csaf.setName(name);
+        csaf.setContent(contents);
+        csaf.setEnabled(enabled);
+        return persist(csaf);
+    }
+
+    /**
+     * Updates an existing CSAF entity.
+     *
+     * @param csafEntryId ID of the CSAF source
+     * @param name Name of the CSAF entity
+     * @param url URL of the configured source
+     * @param enabled True, if source should be used for mirroring
+     * @return the created CSAF entity
+     */
+    @Override
+    public CsafProviderEntity updateCsafProvider(long csafEntryId, String name, String url, boolean enabled) {
+        final CsafProviderEntity csafEntity = getObjectById(CsafProviderEntity.class, csafEntryId);
+        csafEntity.setName(name);
+        csafEntity.setUrl(url);
+        /*repository.setInternal(internal);
+        repository.setAuthenticationRequired(authenticationRequired);
+        if (!authenticationRequired) {
+            repository.setUsername(null);
+            repository.setPassword(null);
+        } else {
+            repository.setUsername(username);
+            repository.setPassword(password);
+        }*/
+
+        csafEntity.setEnabled(enabled);
+        return persist(csafEntity);
+    }
+
+    @Override
+    public PaginatedResult getCsafDocuments() {
+        final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
+        if(orderBy == null) query.setOrdering("entryId desc");
+
+        return execute(query);
+    }
+
+
+    /**
+     * Creates a new CSAF Entity
+     * @param name Name of the CSAF entity
+     * @param url URL of the configured source
+     * @param enabled True, if source should be used for mirroring
+     * @return the created CSAF entity
+     */
+    @Override
+    public CsafDocumentEntity createCsafDocument(String name, String url, boolean enabled) {
+        /*if (repositoryExist(type, identifier)) { // TODO check existing
+            return null;
+        }
+        int order = 0;
+        final List<Repository> existingRepos = getAllRepositoriesOrdered(type);
+        if (existingRepos != null) {
+            for (final Repository existing : existingRepos) {
+                if (existing.getResolutionOrder() > order) {
+                    order = existing.getResolutionOrder();
+                }
+            }
+        }*/
+        final CsafDocumentEntity csaf = new CsafDocumentEntity();
+        csaf.setName(name);
+        csaf.setUrl(url);
+        csaf.setEnabled(enabled);
+
+        return persist(csaf);
+    }
+
+    @Override
+    public CsafDocumentEntity createCsafDocumentFromFile(String name, String contents, boolean enabled) {
+        final var csaf = new CsafDocumentEntity();
+        csaf.setName(name);
+        csaf.setContent(contents);
+        csaf.setEnabled(enabled);
+        return persist(csaf);
+    }
+
+    /**
+     * Updates an existing CSAF entity.
+     *
+     * @param csafEntryId ID of the CSAF source
+     * @param name Name of the CSAF entity
+     * @param url URL of the configured source
+     * @param enabled True, if source should be used for mirroring
+     * @return the created CSAF entity
+     */
+    @Override
+    public CsafDocumentEntity updateCsafDocument(long csafEntryId, String name, String url, boolean enabled) {
+        LOGGER.debug("Updating within CsafQueryManager "+csafEntryId);
+        final CsafDocumentEntity csafEntity = getObjectById(CsafDocumentEntity.class, csafEntryId);
         csafEntity.setName(name);
         csafEntity.setUrl(url);
         /*repository.setInternal(internal);
