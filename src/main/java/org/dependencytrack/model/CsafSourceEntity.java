@@ -28,6 +28,7 @@ import jakarta.validation.constraints.Pattern;
 
 import javax.jdo.annotations.*;
 import java.io.Serializable;
+import java.time.Instant;
 
 /**
  * Model for configured CSAF source entities.
@@ -69,7 +70,7 @@ public class CsafSourceEntity implements Serializable {
 
     @Persistent
     @Column(name = "LASTFETCHED")
-    private long lastFetched;
+    private Instant lastFetched;
 
     @Persistent
     @Column(name = "FETCHINTERVAL")
@@ -140,11 +141,11 @@ public class CsafSourceEntity implements Serializable {
         this.seen = seen;
     }
 
-    public long getLastFetched() {
+    public Instant getLastFetched() {
         return lastFetched;
     }
 
-    public void setLastFetched(long lastFetched) {
+    public void setLastFetched(Instant lastFetched) {
         this.lastFetched = lastFetched;
     }
 
