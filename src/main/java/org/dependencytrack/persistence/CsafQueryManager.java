@@ -148,11 +148,10 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     @Override
     public PaginatedResult getCsafDocuments() {
         final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
-        if(orderBy == null) query.setOrdering("entryId desc");
+        if(orderBy == null) query.setOrdering("id desc");
 
         return execute(query);
     }
-
 
     /**
      * Creates a new CSAF Entity
