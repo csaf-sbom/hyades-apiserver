@@ -1281,7 +1281,7 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().createCsafDocumentFromFile(fileName, content, enabled);
     }
 
-    public CsafDocumentEntity updateCsafDocument(long entryId, String name, String url, boolean enabled) {
+    public CsafDocumentEntity updateCsafDocument(String entryId, String name, String url, boolean enabled) {
         return getCsafQueryManager().updateCsafDocument(entryId, name, url, enabled);
     }
 

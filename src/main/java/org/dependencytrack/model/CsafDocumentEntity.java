@@ -40,8 +40,8 @@ import java.io.Serializable;
 public class CsafDocumentEntity implements Serializable {
 
     @PrimaryKey
-    @Persistent(valueStrategy = IdGeneratorStrategy.NATIVE)
-    private long entryId;
+    @Persistent(name = "ID")
+    private String id;
 
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
     @Pattern(regexp = RegexSequence.Definition.PRINTABLE_CHARS, message = "The name may only contain printable characters")
@@ -88,12 +88,12 @@ public class CsafDocumentEntity implements Serializable {
         this.url = url;
     }
 
-    public long getEntryId() {
-        return entryId;
+    public String getId() {
+        return id;
     }
 
-    public void setEntryId(long entryId) {
-        this.entryId = entryId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {

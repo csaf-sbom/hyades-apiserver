@@ -376,12 +376,12 @@ public class CsafResource extends AlpineResource {
 
         try (QueryManager qm = new QueryManager()) {
             CsafDocumentEntity csafEntity = qm.getObjectById(CsafDocumentEntity.class,
-                    jsonEntity.getEntryId());
+                    jsonEntity.getId());
             if (csafEntity != null) {
                 final String url = StringUtils.trimToNull(jsonEntity.getUrl());
                 try {
 
-                    csafEntity = qm.updateCsafDocument(jsonEntity.getEntryId(),
+                    csafEntity = qm.updateCsafDocument(jsonEntity.getId(),
                             jsonEntity.getName(), jsonEntity.getUrl(), jsonEntity.isEnabled());
 
                     return Response.ok(csafEntity).build();

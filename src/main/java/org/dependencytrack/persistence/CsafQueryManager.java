@@ -202,7 +202,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      * @return the created CSAF entity
      */
     @Override
-    public CsafDocumentEntity updateCsafDocument(long csafEntryId, String name, String url, boolean enabled) {
+    public CsafDocumentEntity updateCsafDocument(String csafEntryId, String name, String url, boolean enabled) {
         LOGGER.debug("Updating within CsafQueryManager "+csafEntryId);
         final CsafDocumentEntity csafEntity = getObjectById(CsafDocumentEntity.class, csafEntryId);
         csafEntity.setName(name);
