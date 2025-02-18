@@ -26,7 +26,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-import javax.jdo.annotations.*;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
 import java.io.Serializable;
 import java.time.Instant;
 
@@ -42,7 +46,7 @@ public class CsafSourceEntity implements Serializable {
 
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.NATIVE)
-    private long entryId;
+    private long id;
 
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
     @Pattern(regexp = RegexSequence.Definition.PRINTABLE_CHARS, message = "The name may only contain printable characters")
@@ -93,12 +97,12 @@ public class CsafSourceEntity implements Serializable {
         this.url = url;
     }
 
-    public long getEntryId() {
-        return entryId;
+    public long getId() {
+        return id;
     }
 
-    public void setEntryId(long entryId) {
-        this.entryId = entryId;
+    public void setEntryId(long id) {
+        this.id = id;
     }
 
     public String getName() {

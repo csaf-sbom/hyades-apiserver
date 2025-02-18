@@ -1249,12 +1249,8 @@ public class QueryManager extends AlpineQueryManager {
         getMetricsQueryManager().deleteMetrics(component);
     }
 
-    public PaginatedResult getCsafSources(boolean aggregators) {
-        return getCsafQueryManager().getCsafSources(aggregators);
-    }
-
-    public PaginatedResult getCsafSourcesDiscoveries() {
-        return getCsafQueryManager().getCsafSourcesDiscoveries();
+    public PaginatedResult getCsafSources(boolean isAggregator, boolean isDiscovery) {
+        return getCsafQueryManager().getCsafSources(isAggregator, isDiscovery);
     }
 
     public CsafSourceEntity createCsafSource(String name, String url, boolean enabled, boolean aggregator) {

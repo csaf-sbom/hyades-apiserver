@@ -50,30 +50,19 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
 
 
     /**
+     * Retrieves a list of all persisted CSAF sources.
      *
-     * @param aggregators true if aggregators should be fetched, false if providers are to be shown
+     * @param isAggregator true if aggregators should be fetched, false if providers are to be shown.
+     * @param isDiscovered true if discovered sources should be fetched, false if configured sources are to be shown.
      * @return list of csaf sources
      */
     @Override
-    public PaginatedResult getCsafSources(boolean aggregators) {
+    public PaginatedResult getCsafSources(boolean isAggregator, boolean isDiscovered) {
         final Query<CsafSourceEntity> query = pm.newQuery(CsafSourceEntity.class);
-        query.filter("aggregator == :aggregator");
-        if(orderBy == null) query.setOrdering("entryId desc");
+        query.filter("aggregator == :aggregator && discovery == :discovered");
+        if(orderBy == null) query.setOrdering("id desc");
 
-        return execute(query, aggregators);
-    }
-
-    /**
-     * Get discoveries, either aggregators or providers
-     * @return
-     */
-    @Override
-    public PaginatedResult getCsafSourcesDiscoveries() {
-        final Query<CsafSourceEntity> query = pm.newQuery(CsafSourceEntity.class);
-        query.filter("discovery == :discoveries");
-        if(orderBy == null) query.setOrdering("entryId desc");
-
-        return execute(query, true);
+        return execute(query, isAggregator, isDiscovered);
     }
 
     /**

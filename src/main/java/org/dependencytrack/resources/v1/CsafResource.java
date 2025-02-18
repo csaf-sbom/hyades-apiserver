@@ -98,7 +98,7 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getCsafAggregators() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            final PaginatedResult result = qm.getCsafSources(true);
+            final PaginatedResult result = qm.getCsafSources(true, false);
             return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
         }
     }
@@ -149,7 +149,7 @@ public class CsafResource extends AlpineResource {
          * }
          */
         try (QueryManager qm = new QueryManager()) {
-            CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, jsonEntity.getEntryId());
+            CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, jsonEntity.getId());
             if (csafEntity != null) {
                 final String url = StringUtils.trimToNull(jsonEntity.getUrl());
                 try {
@@ -161,7 +161,7 @@ public class CsafResource extends AlpineResource {
                      * ? DataEncryption.encryptAsString(jsonRepository.getPassword())
                      * : repository.getPassword();
                      */
-                    csafEntity = qm.updateCsafSource(jsonEntity.getEntryId(), jsonEntity.getName(),
+                    csafEntity = qm.updateCsafSource(jsonEntity.getId(), jsonEntity.getName(),
                             jsonEntity.getUrl(), jsonEntity.isEnabled());
 
                     return Response.ok(csafEntity).build();
@@ -214,7 +214,7 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getCsafProviders() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            final PaginatedResult result = qm.getCsafSources(false);
+            final PaginatedResult result = qm.getCsafSources(false, false);
             return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
         }
     }
@@ -265,7 +265,7 @@ public class CsafResource extends AlpineResource {
          * }
          */
         try (QueryManager qm = new QueryManager()) {
-            CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, jsonEntity.getEntryId());
+            CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, jsonEntity.getId());
             if (csafEntity != null) {
                 final String url = StringUtils.trimToNull(jsonEntity.getUrl());
                 try {
@@ -277,7 +277,7 @@ public class CsafResource extends AlpineResource {
                      * ? DataEncryption.encryptAsString(jsonRepository.getPassword())
                      * : repository.getPassword();
                      */
-                    csafEntity = qm.updateCsafSource(jsonEntity.getEntryId(), jsonEntity.getName(),
+                    csafEntity = qm.updateCsafSource(jsonEntity.getId(), jsonEntity.getName(),
                             jsonEntity.getUrl(), jsonEntity.isEnabled());
 
                     return Response.ok(csafEntity).build();
@@ -304,14 +304,7 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
     public Response getDiscoveredCsafSources() {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafSourcesDiscoveries();
-
-
-            // TODO Add default suggestions
-            var bsiWid = new CsafSourceEntity("BSI WID (hardcoded sample)", "https://wid.cert-bund.de/");
-            bsiWid.setDiscovery(true);
-            results.getObjects().add(bsiWid);
-            results.setTotal(results.getObjects().size());
+            var results = qm.getCsafSources(false, true);
 
             return Response.ok(results.getObjects()).header(TOTAL_COUNT_HEADER, results.getTotal()).build();
         }
