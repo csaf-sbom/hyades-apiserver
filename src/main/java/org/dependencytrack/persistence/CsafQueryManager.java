@@ -26,6 +26,7 @@ import org.dependencytrack.model.CsafDocumentEntity;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
+import java.util.List;
 
 public class CsafQueryManager extends QueryManager implements IQueryManager {
     private static final Logger LOGGER = Logger.getLogger(CsafQueryManager.class);
@@ -135,11 +136,26 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     @Override
-    public PaginatedResult getCsafDocuments() {
+    public PaginatedResult getCsafDocuments(String searchText, int pageSize, int pageNumber) {
         final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
         if(orderBy == null) query.setOrdering("id desc");
 
         return execute(query);
+    }
+
+    @Override
+    public PaginatedResult searchCsafDocuments(String searchText, int pageSize, int pageNumber) {
+        Query query = pm.newQuery("javax.jdo.query.SQL",
+                "SELECT * FROM \"CSAFDOCUMENTENTITY\" " +
+                        "AND searchvector @@ to_tsquery(?) "
+                        ); // +"ORDER BY \"ID\" DESC
+        query.setParameters(searchText);
+        List<CsafDocumentEntity> results = query.executeList();
+
+        PaginatedResult pr = new PaginatedResult();
+        pr.setObjects(results);
+        pr.setTotal(results.size());
+        return pr;
     }
 
     /**

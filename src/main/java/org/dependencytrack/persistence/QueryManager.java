@@ -1261,12 +1261,18 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().createCsafSourceFromFile(name, contents, enabled, aggregator);
     }
 
+
+
     public CsafSourceEntity updateCsafSource(long entryId, String name, String url, boolean enabled) {
         return getCsafQueryManager().updateCsafSource(entryId, name, url, enabled);
     }
 
-    public PaginatedResult getCsafDocuments() {
-        return getCsafQueryManager().getCsafDocuments();
+    public PaginatedResult getCsafDocuments(String searchText, int pageSize, int pageNumber) {
+        return getCsafQueryManager().getCsafDocuments(searchText, pageSize, pageNumber);
+    }
+
+    public PaginatedResult searchCsafDocuments(String searchText, int pageSize, int pageNumber) {
+        return getCsafQueryManager().searchCsafDocuments(searchText, pageSize, pageNumber);
     }
 
     public CsafDocumentEntity createCsafDocument(String name, String url, boolean enabled) {
@@ -2097,7 +2103,4 @@ public class QueryManager extends AlpineQueryManager {
 
         return clauseTemplate.formatted(pagination.getOffset(), pagination.getLimit());
     }
-
-
-
 }
