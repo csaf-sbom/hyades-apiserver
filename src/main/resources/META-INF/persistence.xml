@@ -63,6 +63,5 @@
     <class>org.dependencytrack.model.VulnerabilityPolicyBundle</class>
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <shared-cache-mode>NONE</shared-cache-mode>
-    <property name="datanucleus.schema.autoCreateAll" value="true" /><!-- TODO only for debugging, create migrations! -->
   </persistence-unit>
 </persistence>
