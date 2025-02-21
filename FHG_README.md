@@ -54,3 +54,9 @@ Run the frontend **AFTER** starting services and apiserver, it will chose the ne
 ```
 npm start
 ```
+
+# other notes
+Liquibase plugin (if not found)
+```
+mvn org.liquibase:liquibase-maven-plugin:4.31.1:update
+```

@@ -12,4 +12,6 @@ https://github.com/oasis-open/csaf-documentation/blob/master/img/csaf-logo.png
 
 # hyades
 [ ] remove pgadmin service from hyades/docker-compose.yml
+
+[ ] changelog-*.xml changeSet Author? FHG?
  
