@@ -26,8 +26,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-import javax.jdo.annotations.*;
+import javax.jdo.annotations.Column;
+import javax.jdo.annotations.PersistenceCapable;
+import javax.jdo.annotations.Persistent;
+import javax.jdo.annotations.PrimaryKey;
 import java.io.Serializable;
+import java.time.Instant;
 
 /**
  * Model for configured CSAF document entities.
@@ -69,7 +73,7 @@ public class CsafDocumentEntity implements Serializable {
 
     @Persistent
     @Column(name = "LASTFETCHED")
-    private long lastFetched;
+    private Instant lastFetched;
 
     @Persistent
     @Column(name = "FETCHINTERVAL")
@@ -136,11 +140,11 @@ public class CsafDocumentEntity implements Serializable {
         this.seen = seen;
     }
 
-    public long getLastFetched() {
+    public Instant getLastFetched() {
         return lastFetched;
     }
 
-    public void setLastFetched(long lastFetched) {
+    public void setLastFetched(Instant lastFetched) {
         this.lastFetched = lastFetched;
     }
 
