@@ -103,6 +103,7 @@ public enum ConfigPropertyConstants {
     TASK_SCHEDULER_LDAP_SYNC_CADENCE("task-scheduler", "ldap.sync.cadence", "6", PropertyType.INTEGER, "Sync cadence (in hours) for LDAP", ConfigPropertyAccessMode.READ_WRITE),
     TASK_SCHEDULER_GHSA_MIRROR_CADENCE("task-scheduler", "ghsa.mirror.cadence", "24", PropertyType.INTEGER, "Mirror cadence (in hours) for Github Security Advisories", ConfigPropertyAccessMode.READ_WRITE),
     TASK_SCHEDULER_OSV_MIRROR_CADENCE("task-scheduler", "osv.mirror.cadence", "24", PropertyType.INTEGER, "Mirror cadence (in hours) for OSV database", ConfigPropertyAccessMode.READ_WRITE),
+    TASK_SCHEDULER_CSAF_MIRROR_CADENCE("task-scheduler", "csaf.mirror.cadence", "1", PropertyType.INTEGER, "Mirror cadence (in hours) for CSAF Advisories", ConfigPropertyAccessMode.READ_WRITE),
     TASK_SCHEDULER_NIST_MIRROR_CADENCE("task-scheduler", "nist.mirror.cadence", "24", PropertyType.INTEGER, "Mirror cadence (in hours) for NVD database", ConfigPropertyAccessMode.READ_WRITE),
     TASK_SCHEDULER_PORTFOLIO_METRICS_UPDATE_CADENCE("task-scheduler", "portfolio.metrics.update.cadence", "1", PropertyType.INTEGER, "Update cadence (in hours) for portfolio metrics", ConfigPropertyAccessMode.READ_WRITE),
     TASK_SCHEDULER_VULNERABILITY_METRICS_UPDATE_CADENCE("task-scheduler", "vulnerability.metrics.update.cadence", "1", PropertyType.INTEGER, "Update cadence (in hours) for vulnerability metrics", ConfigPropertyAccessMode.READ_WRITE),
