@@ -21,11 +21,14 @@ package org.dependencytrack.persistence;
 import alpine.common.logging.Logger;
 import alpine.persistence.PaginatedResult;
 import alpine.resources.AlpineRequest;
-import org.dependencytrack.model.CsafSourceEntity;
+import org.apache.commons.codec.binary.Hex;
 import org.dependencytrack.model.CsafDocumentEntity;
+import org.dependencytrack.model.CsafSourceEntity;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class CsafQueryManager extends QueryManager implements IQueryManager {
@@ -158,41 +161,12 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
         return pr;
     }
 
-    /**
-     * Creates a new CSAF Entity
-     * @param name Name of the CSAF entity
-     * @param url URL of the configured source
-     * @param enabled True, if source should be used for mirroring
-     * @return the created CSAF entity
-     */
     @Override
-    public CsafDocumentEntity createCsafDocument(String name, String url, boolean enabled) {
-        /*if (repositoryExist(type, identifier)) { // TODO check existing
-            return null;
-        }
-        int order = 0;
-        final List<Repository> existingRepos = getAllRepositoriesOrdered(type);
-        if (existingRepos != null) {
-            for (final Repository existing : existingRepos) {
-                if (existing.getResolutionOrder() > order) {
-                    order = existing.getResolutionOrder();
-                }
-            }
-        }*/
-        final CsafDocumentEntity csaf = new CsafDocumentEntity();
-        csaf.setName(name);
-        csaf.setUrl(url);
-        csaf.setEnabled(enabled);
-
-        return persist(csaf);
-    }
-
-    @Override
-    public CsafDocumentEntity createCsafDocumentFromFile(String name, String contents, boolean enabled) {
+    public CsafDocumentEntity createCsafDocumentFromFile(String name, String contents, String publisherNamespace, String trackingID) throws NoSuchAlgorithmException {
         final var csaf = new CsafDocumentEntity();
         csaf.setName(name);
         csaf.setContent(contents);
-        csaf.setEnabled(enabled);
+        csaf.setId(computeDocumentId(publisherNamespace, trackingID));
         return persist(csaf);
     }
 
@@ -223,5 +197,14 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
 
         csafEntity.setEnabled(enabled);
         return persist(csafEntity);
+    }
+
+    public static String computeDocumentId(String publisherNamespace, String trackingID) throws NoSuchAlgorithmException {
+        var digest = MessageDigest.getInstance("SHA-256");
+
+        return "CSAF-" + Hex.encodeHexString(
+                digest.digest(
+                        publisherNamespace.getBytes()
+                )).substring(0, 8) + "-" + trackingID;
     }
 }

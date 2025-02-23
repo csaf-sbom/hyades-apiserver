@@ -22,6 +22,7 @@ import alpine.common.logging.Logger;
 import alpine.persistence.PaginatedResult;
 import alpine.server.auth.PermissionRequired;
 import alpine.server.resources.AlpineResource;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -33,14 +34,22 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.CsafMirrorEvent;
-import org.dependencytrack.model.CsafSourceEntity;
 import org.dependencytrack.model.CsafDocumentEntity;
+import org.dependencytrack.model.CsafSourceEntity;
 import org.dependencytrack.model.Repository;
 import org.dependencytrack.persistence.QueryManager;
 import org.dependencytrack.resources.v1.openapi.PaginatedApi;
@@ -51,6 +60,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Resource for vulnerability policies.
@@ -320,7 +330,7 @@ public class CsafResource extends AlpineResource {
         }
     }
 
-    @PUT
+    @POST
     @Path("/documents/")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_PLAIN)
@@ -339,46 +349,21 @@ public class CsafResource extends AlpineResource {
              var uploadBuffer = new ByteArrayOutputStream()) {
             uploadStream.transferTo(uploadBuffer);
             String content = uploadBuffer.toString();
-            qm.createCsafDocumentFromFile(fileDetail.getFileName(), content, true);
+
+            // We do not have access to the complete CSAF library in the api server, but we do a quick
+            // sanity check to ensure the file is a JSON and contains required CSAF fields for computing
+            // the ID
+            var doc = new ObjectMapper().readTree(content);
+            qm.createCsafDocumentFromFile(
+                    fileDetail.getFileName(),
+                    content,
+                    doc.get("document").get("publisher").get("namespace").asText(),
+                    doc.get("document").get("tracking").get("id").asText()
+            );
             return Response.ok("File uploaded successfully: " + fileDetail.getFileName()).build();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("File upload failed").build();
-        }
-    }
-
-    @POST
-    @Path("/documents/")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Updates a CSAF document", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "The updated CSAF document", content = @Content(schema = @Schema(implementation = Repository.class))),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "404", description = "The UUID of the repository could not be found")
-    })
-    @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT) // TODO create update only permission
-    public Response updateCsafDocument(CsafDocumentEntity jsonEntity) {
-
-        try (QueryManager qm = new QueryManager()) {
-            CsafDocumentEntity csafEntity = qm.getObjectById(CsafDocumentEntity.class,
-                    jsonEntity.getId());
-            if (csafEntity != null) {
-                final String url = StringUtils.trimToNull(jsonEntity.getUrl());
-                try {
-
-                    csafEntity = qm.updateCsafDocument(jsonEntity.getId(),
-                            jsonEntity.getName(), jsonEntity.getUrl(), jsonEntity.isEnabled());
-
-                    return Response.ok(csafEntity).build();
-                } catch (Exception e) {
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).
-                            entity("The specified CSAF source could not be updated").build();
-                }
-            } else {
-                return Response.status(Response.Status.NOT_FOUND).
-                        entity("The csafEntryId of the source could not be found.").build();
-            }
         }
     }
 
@@ -430,4 +415,5 @@ public class CsafResource extends AlpineResource {
             }
         }
     }
+
 }

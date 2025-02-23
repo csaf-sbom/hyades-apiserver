@@ -23,7 +23,9 @@
         </createTable>
 
         <createTable tableName="CSAFDOCUMENTENTITY">
-            <column name="ID" type="VARCHAR(255)" />
+            <column name="ID" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CSAFDOCUMENTENTITY_PK" />
+            </column>
             <column name="NAME" type="VARCHAR(255)" />
             <column name="URL" type="VARCHAR(255)" />
             <column name="ENABLED" type="BOOLEAN" />
