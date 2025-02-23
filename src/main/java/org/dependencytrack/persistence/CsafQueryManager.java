@@ -153,10 +153,14 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
 
     @Override
     public PaginatedResult getCsafDocuments(String searchText, int pageSize, int pageNumber) {
-        final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
-        if(orderBy == null) query.setOrdering("id desc");
+        if(searchText.isBlank()) {
+            final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
+            if(orderBy == null) query.setOrdering("id desc");
 
-        return execute(query);
+            return execute(query);
+        } else {
+            return searchCsafDocuments(searchText, pageSize, pageNumber);
+        }
     }
 
     /**
@@ -176,9 +180,10 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     public PaginatedResult searchCsafDocuments(String searchText, int pageSize, int pageNumber) {
         Query query = pm.newQuery("javax.jdo.query.SQL",
                 "SELECT * FROM \"CSAFDOCUMENTENTITY\" " +
-                        "AND searchvector @@ to_tsquery(?) "
+                        "WHERE searchvector @@ to_tsquery(?) "
                         ); // +"ORDER BY \"ID\" DESC
         query.setParameters(searchText);
+        query.setResultClass(CsafDocumentEntity.class);
         List<CsafDocumentEntity> results = query.executeList();
 
         PaginatedResult pr = new PaginatedResult();
