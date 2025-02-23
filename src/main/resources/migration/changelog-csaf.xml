@@ -17,7 +17,6 @@
             <column name="AGGREGATOR" type="BOOLEAN" />
             <column name="DISCOVERY" type="BOOLEAN" />
             <column name="SEEN" type="BOOLEAN" />
-            <column name="FETCHINTERVAL" type="INT" />
             <column name="LASTFETCHED" type="TIMESTAMP WITH TIME ZONE" />
             <column name="CONTENT" type="TEXT" />
         </createTable>

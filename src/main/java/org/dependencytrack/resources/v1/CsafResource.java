@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Validator;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -46,7 +47,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.model.CsafDocumentEntity;
@@ -142,6 +142,7 @@ public class CsafResource extends AlpineResource {
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT) // TODO create update only permission
     public Response updateCsafAggregator(CsafSourceEntity jsonEntity) {
+        final Validator validator = super.getValidator();
         /*
          * final Validator validator = super.getValidator(); // TODO validate
          * failOnValidationError(validator.validateProperty(jsonRepository,
@@ -155,30 +156,15 @@ public class CsafResource extends AlpineResource {
          * }
          */
         try (QueryManager qm = new QueryManager()) {
-            CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, jsonEntity.getId());
-            if (csafEntity != null) {
-                final String url = StringUtils.trimToNull(jsonEntity.getUrl());
-                try {
-                    /*
-                     * // The password is not passed to the front-end, so it should only be
-                     * overwritten if it is not null.
-                     * final String updatedPassword = jsonRepository.getPassword() != null &&
-                     * !jsonRepository.getPassword().equals(ENCRYPTED_PLACEHOLDER)
-                     * ? DataEncryption.encryptAsString(jsonRepository.getPassword())
-                     * : repository.getPassword();
-                     */
-                    csafEntity = qm.updateCsafSource(jsonEntity.getId(), jsonEntity.getName(),
-                            jsonEntity.getUrl(), jsonEntity.isEnabled());
-
-                    return Response.ok(csafEntity).build();
-                } catch (Exception e) {
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("The specified CSAF source could not be updated").build();
-                }
-            } else {
+            var csafEntity = qm.updateCsafSource(jsonEntity);
+            if(csafEntity == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("The csafEntryId of the source could not be found.").build();
+                                .entity("The ID of the aggregator could not be found.").build();
             }
+            return Response.ok(csafEntity).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity("The specified CSAF aggregator could not be updated").build();
         }
     }
 
@@ -258,43 +244,16 @@ public class CsafResource extends AlpineResource {
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT) // TODO create update only permission
     public Response updateCsafProvider(CsafSourceEntity jsonEntity) {
-        /*
-         * final Validator validator = super.getValidator(); // TODO validate
-         * failOnValidationError(validator.validateProperty(jsonRepository,
-         * "identifier"),
-         * validator.validateProperty(jsonRepository, "url")
-         * );
-         * //TODO: When the UI changes are updated then this should be a validation
-         * check as part of line 201
-         * if (jsonRepository.isAuthenticationRequired() == null) {
-         * jsonRepository.setAuthenticationRequired(false);
-         * }
-         */
         try (QueryManager qm = new QueryManager()) {
-            CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, jsonEntity.getId());
-            if (csafEntity != null) {
-                final String url = StringUtils.trimToNull(jsonEntity.getUrl());
-                try {
-                    /*
-                     * // The password is not passed to the front-end, so it should only be
-                     * overwritten if it is not null.
-                     * final String updatedPassword = jsonRepository.getPassword() != null &&
-                     * !jsonRepository.getPassword().equals(ENCRYPTED_PLACEHOLDER)
-                     * ? DataEncryption.encryptAsString(jsonRepository.getPassword())
-                     * : repository.getPassword();
-                     */
-                    csafEntity = qm.updateCsafSource(jsonEntity.getId(), jsonEntity.getName(),
-                            jsonEntity.getUrl(), jsonEntity.isEnabled());
-
-                    return Response.ok(csafEntity).build();
-                } catch (Exception e) {
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("The specified CSAF source could not be updated").build();
-                }
-            } else {
+            var csafEntity = qm.updateCsafSource(jsonEntity);
+            if(csafEntity == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("The csafEntryId of the source could not be found.").build();
+                        .entity("The ID of the provider could not be found.").build();
             }
+            return Response.ok(csafEntity).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("The specified CSAF provider could not be updated").build();
         }
     }
 

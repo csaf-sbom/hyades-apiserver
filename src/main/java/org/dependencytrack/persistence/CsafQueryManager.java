@@ -25,6 +25,7 @@ import org.dependencytrack.model.CsafDocumentEntity;
 import org.dependencytrack.model.CsafSourceEntity;
 
 import javax.annotation.Nullable;
+import javax.jdo.JDOObjectNotFoundException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 import java.util.List;
@@ -126,32 +127,28 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     /**
-     * Updates an existing CSAF entity.
+     * Updates an existing CSAF source entity.
      *
-     * @param csafEntryId ID of the CSAF source
-     * @param name Name of the CSAF entity
-     * @param url URL of the configured source
-     * @param enabled True, if source should be used for mirroring
-     * @return the created CSAF entity
+     * @param source The CSAF source entity to update
+     * @return the updated CSAF entity
      */
     @Override
-    public CsafSourceEntity updateCsafSource(long csafEntryId, String name, String url, boolean enabled) {
-        LOGGER.debug("Updating within CsafQueryManager "+csafEntryId);
-        final CsafSourceEntity csafEntity = getObjectById(CsafSourceEntity.class, csafEntryId);
-        csafEntity.setName(name);
-        csafEntity.setUrl(url);
-        /*repository.setInternal(internal);
-        repository.setAuthenticationRequired(authenticationRequired);
-        if (!authenticationRequired) {
-            repository.setUsername(null);
-            repository.setPassword(null);
-        } else {
-            repository.setUsername(username);
-            repository.setPassword(password);
-        }*/
-
-        csafEntity.setEnabled(enabled);
-        return persist(csafEntity);
+    public @Nullable CsafSourceEntity updateCsafSource(CsafSourceEntity source) {
+        LOGGER.debug("Updating within CsafQueryManager "+ source.getId());
+        try {
+            final CsafSourceEntity existing = getObjectById(CsafSourceEntity.class, source.getId());
+            applyIfChanged(existing, source, CsafSourceEntity::getName, existing::setName);
+            applyIfChanged(existing, source, CsafSourceEntity::getUrl, existing::setUrl);
+            applyIfChanged(existing, source, CsafSourceEntity::getContent, existing::setContent);
+            applyIfChanged(existing, source, CsafSourceEntity::getLastFetched, existing::setLastFetched);
+            applyIfChanged(existing, source, CsafSourceEntity::isEnabled, existing::setEnabled);
+            applyIfChanged(existing, source, CsafSourceEntity::isAggregator, existing::setAggregator);
+            applyIfChanged(existing, source, CsafSourceEntity::isDiscovery, existing::setDiscovery);
+            applyIfChanged(existing, source, CsafSourceEntity::isSeen, existing::setSeen);
+            return existing;
+        } catch (JDOObjectNotFoundException e) {
+            return null;
+        }
     }
 
     @Override
@@ -191,9 +188,9 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     /**
-     * Updates an existing CSAF entity.
+     * Updates an existing CSAF document entity.
      *
-     * @param csaf The CSAF entity to update
+     * @param csaf The CSAF document entity to update
      * @return the updated CSAF entity
      */
     @Override

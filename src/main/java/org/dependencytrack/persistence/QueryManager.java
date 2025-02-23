@@ -1313,8 +1313,8 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().createCsafSourceFromFile(name, contents, enabled, aggregator);
     }
 
-    public CsafSourceEntity updateCsafSource(long entryId, String name, String url, boolean enabled) {
-        return getCsafQueryManager().updateCsafSource(entryId, name, url, enabled);
+    public CsafSourceEntity updateCsafSource(CsafSourceEntity source) {
+        return getCsafQueryManager().updateCsafSource(source);
     }
 
     public PaginatedResult getCsafDocuments(String searchText, int pageSize, int pageNumber) {
