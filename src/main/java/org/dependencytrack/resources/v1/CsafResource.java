@@ -45,6 +45,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.CsafMirrorEvent;
@@ -60,7 +61,9 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 
 /**
  * Resource for vulnerability policies.
@@ -354,14 +357,27 @@ public class CsafResource extends AlpineResource {
             // sanity check to ensure the file is a JSON and contains required CSAF fields for computing
             // the ID
             var doc = new ObjectMapper().readTree(content);
-            qm.createCsafDocumentFromFile(
-                    fileDetail.getFileName(),
-                    content,
-                    doc.get("document").get("publisher").get("namespace").asText(),
-                    doc.get("document").get("tracking").get("id").asText()
-            );
+            var publisherNamespace = doc.get("document").get("publisher").get("namespace").asText();
+            var trackingID = doc.get("document").get("tracking").get("id").asText();
+            var trackingVersion = doc.get("document").get("tracking").get("version").asText();
+            var title = doc.get("document").get("title").asText();
+
+            // Create a new CSAF document that we have already "seen" and was just fetched
+            final var csaf = new CsafDocumentEntity();
+            csaf.setName(title);
+            csaf.setUrl(fileDetail.getFileName());
+            csaf.setContent(content);
+            csaf.setLastFetched(Instant.now());
+            csaf.setPublisherNamespace(publisherNamespace);
+            csaf.setTrackingID(trackingID);
+            csaf.setTrackingVersion(trackingVersion);
+            csaf.setSeen(true);
+
+            // Sync the document into the database, replacing an older version with the same combination
+            // of tracking ID and publisher namespace if necessary
+            qm.synchronizeCsafDocument(csaf);
             return Response.ok("File uploaded successfully: " + fileDetail.getFileName()).build();
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("File upload failed").build();
         }
@@ -414,6 +430,15 @@ public class CsafResource extends AlpineResource {
                 return Response.ok(csafEntity.getContent()).build();
             }
         }
+    }
+
+    public static String computeDocumentId(String publisherNamespace, String trackingID) throws NoSuchAlgorithmException {
+        var digest = MessageDigest.getInstance("SHA-256");
+
+        return "CSAF-" + Hex.encodeHexString(
+                digest.digest(
+                        publisherNamespace.getBytes()
+                )).substring(0, 8) + "-" + trackingID;
     }
 
 }

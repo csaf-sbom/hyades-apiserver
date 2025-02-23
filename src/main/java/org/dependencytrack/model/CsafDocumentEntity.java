@@ -23,10 +23,10 @@ import alpine.server.json.TrimmedStringDeserializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 import javax.jdo.annotations.Column;
+import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
@@ -44,8 +44,8 @@ import java.time.Instant;
 public class CsafDocumentEntity implements Serializable {
 
     @PrimaryKey
-    @Persistent(name = "ID")
-    private String id;
+    @Persistent(valueStrategy = IdGeneratorStrategy.NATIVE)
+    private long id;
 
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
     @Pattern(regexp = RegexSequence.Definition.PRINTABLE_CHARS, message = "The name may only contain printable characters")
@@ -58,14 +58,21 @@ public class CsafDocumentEntity implements Serializable {
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
     private String url;
 
-    @Persistent
-    @Column(name = "ENABLED")
-    @NotNull
-    private boolean enabled;
-
     @Persistent(defaultFetchGroup = "false")
     @Column(name = "CONTENT", jdbcType = "CLOB")
     private String content;
+
+    @Persistent
+    @Column(name = "PUBLISHERNAMESPACE")
+    private String publisherNamespace;
+
+    @Persistent
+    @Column(name = "TRACKINGID")
+    private String trackingID;
+
+    @Persistent
+    @Column(name = "TRACKINGVERSION")
+    private String trackingVersion;
 
     @Persistent
     @Column(name = "SEEN")
@@ -74,14 +81,6 @@ public class CsafDocumentEntity implements Serializable {
     @Persistent
     @Column(name = "LASTFETCHED")
     private Instant lastFetched;
-
-    @Persistent
-    @Column(name = "FETCHINTERVAL")
-    private int fetchInterval;
-
-    @Persistent
-    @Column(name = "DISCOVERY")
-    private boolean discovery;
 
     public CsafDocumentEntity() {
         // no args for jdo
@@ -92,11 +91,11 @@ public class CsafDocumentEntity implements Serializable {
         this.url = url;
     }
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -116,20 +115,36 @@ public class CsafDocumentEntity implements Serializable {
         this.url = url;
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
     public String getContent() {
         return content;
     }
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getPublisherNamespace() {
+        return publisherNamespace;
+    }
+
+    public void setPublisherNamespace(String publisherNamespace) {
+        this.publisherNamespace = publisherNamespace;
+    }
+
+    public String getTrackingID() {
+        return trackingID;
+    }
+
+    public void setTrackingID(String trackingID) {
+        this.trackingID = trackingID;
+    }
+
+    public String getTrackingVersion() {
+        return trackingVersion;
+    }
+
+    public void setTrackingVersion(String trackingVersion) {
+        this.trackingVersion = trackingVersion;
     }
 
     public boolean isSeen() {
@@ -148,19 +163,4 @@ public class CsafDocumentEntity implements Serializable {
         this.lastFetched = lastFetched;
     }
 
-    public int getFetchInterval() {
-        return fetchInterval;
-    }
-
-    public void setFetchInterval(int fetchInterval) {
-        this.fetchInterval = fetchInterval;
-    }
-
-    public boolean isDiscovery() {
-        return discovery;
-    }
-
-    public void setDiscovery(boolean discovery) {
-        this.discovery = discovery;
-    }
 }

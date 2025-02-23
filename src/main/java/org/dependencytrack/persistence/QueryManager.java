@@ -110,7 +110,6 @@ import javax.jdo.Transaction;
 import javax.jdo.datastore.JDOConnection;
 import javax.jdo.metadata.MemberMetadata;
 import javax.jdo.metadata.TypeMetadata;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -1314,8 +1313,6 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().createCsafSourceFromFile(name, contents, enabled, aggregator);
     }
 
-
-
     public CsafSourceEntity updateCsafSource(long entryId, String name, String url, boolean enabled) {
         return getCsafQueryManager().updateCsafSource(entryId, name, url, enabled);
     }
@@ -1328,12 +1325,12 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().searchCsafDocuments(searchText, pageSize, pageNumber);
     }
 
-    public CsafDocumentEntity createCsafDocumentFromFile(String name, String contents, String publisherNamespace, String trackingID) throws NoSuchAlgorithmException {
-        return getCsafQueryManager().createCsafDocumentFromFile(name, contents, publisherNamespace, trackingID);
+    public CsafDocumentEntity synchronizeCsafDocument(CsafDocumentEntity csaf){
+        return getCsafQueryManager().synchronizeCsafDocument(csaf);
     }
 
-    public CsafDocumentEntity updateCsafDocument(String entryId, String name, String url, boolean enabled) {
-        return getCsafQueryManager().updateCsafDocument(entryId, name, url, enabled);
+    public CsafDocumentEntity updateCsafDocument(CsafDocumentEntity csaf) {
+        return getCsafQueryManager().updateCsafDocument(csaf);
     }
 
     public PaginatedResult getRepositories() {
