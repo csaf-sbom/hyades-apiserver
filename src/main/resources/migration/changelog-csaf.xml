@@ -47,11 +47,10 @@
     </changeSet>
     <changeSet id="csaf-2" author="FhG">
         <sql>
-                ALTER TABLE "CSAFDOCUMENTENTITY"
-                ADD COLUMN searchvector tsvector
-                GENERATED ALWAYS AS (to_tsvector('english', coalesce("CONTENT", ''))) STORED;
+            ALTER TABLE "CSAFDOCUMENTENTITY"
+            ADD COLUMN searchvector tsvector
+            GENERATED ALWAYS AS (to_tsvector('english', coalesce("NAME", '') || ' ' || coalesce("URL", '') || ' ' || coalesce("CONTENT", ''))) STORED;
         </sql>
-        <!--GENERATED ALWAYS AS (to_tsvector('english', coalesce("NAME", '') || ' ' || coalesce("URL", '') || ' ' || coalesce("CONTENT", ''))) STORED;-->
         <sql>
             CREATE INDEX searchvector_idx ON "CSAFDOCUMENTENTITY" USING GIN (searchvector);
         </sql>
