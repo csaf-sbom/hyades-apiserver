@@ -1325,6 +1325,10 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().searchCsafDocuments(searchText, pageSize, pageNumber);
     }
 
+    public void synchronizeAllCsafDocuments(List<CsafDocumentEntity> list) {
+        getCsafQueryManager().synchronizeAllCsafDocuments(list);
+    }
+
     public CsafDocumentEntity synchronizeCsafDocument(CsafDocumentEntity csaf){
         return getCsafQueryManager().synchronizeCsafDocument(csaf);
     }

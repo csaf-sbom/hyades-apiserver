@@ -111,6 +111,18 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     /**
+     * Synchronizes a batch of {@link CsafDocumentEntity} records.
+     * @param list the batch of {@link CsafDocumentEntity} records to synchronize
+     */
+    public void synchronizeAllCsafDocuments(List<CsafDocumentEntity> list) {
+        runInTransaction(() -> {
+            for (final CsafDocumentEntity doc : list) {
+                synchronizeCsafDocument(doc);
+            }
+        });
+    }
+
+    /**
      * Synchronizes a {{@link CsafDocumentEntity}}. This method first checks if the record
      * already exists and updates it. If it does exist, it will create a new record.
      *
