@@ -342,6 +342,33 @@ public class CsafResource extends AlpineResource {
         }
     }
 
+    @POST
+    @Path("/documents/seen/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Mark a CSAF document as seen", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "CSAF document marked seen successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "The entry ID of the CSAF document could not be found")
+    })
+    @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
+    public Response toggleCsafDocumentSeen(
+            @Parameter(description = "The id of the CSAF document to mark as seen", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("id") String id) {
+
+        try (QueryManager qm = new QueryManager()) {
+            final CsafDocumentEntity csafEntity = qm.getObjectById(CsafDocumentEntity.class,
+                    id);
+            if (csafEntity != null) {
+                qm.toggleCsafDocumentSeen(csafEntity);
+                return Response.status(Response.Status.NO_CONTENT).build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).
+                        entity("The id of the CSAF document could not be found.").build();
+            }
+        }
+    }
+
     @DELETE
     @Path("/documents/{csafEntryId}")
     @Consumes(MediaType.APPLICATION_JSON)

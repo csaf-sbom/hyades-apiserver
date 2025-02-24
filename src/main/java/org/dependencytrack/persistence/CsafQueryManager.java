@@ -229,4 +229,11 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
         return null;
     }
 
+    @Override
+    public boolean toggleCsafDocumentSeen(CsafDocumentEntity csafDocument) {
+        csafDocument.setSeen(!csafDocument.isSeen());
+        pm.makePersistent(csafDocument);
+        return false;
+    }
+
 }
