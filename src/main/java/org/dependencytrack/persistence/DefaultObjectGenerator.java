@@ -253,7 +253,8 @@ public class DefaultObjectGenerator implements ServletContextListener {
             qm.addUserToTeam(admin, sysadmins);
 
             admin = qm.getObjectById(ManagedUser.class, admin.getId());
-            admin.setPermissions(qm.getPermissions());
+            var permissions = qm.getPermissions();
+            admin.setPermissions(permissions);
             qm.persist(admin);
         }
     }
@@ -355,7 +356,7 @@ public class DefaultObjectGenerator implements ServletContextListener {
     public void loadDefaultCsafAggregators() {
         try(QueryManager qm = new QueryManager()) {
             LOGGER.info("Synchronizing default CSAF aggregators to datastore");
-            qm.createCsafSource("BSI WID", "https://wid.cert-bund.de/", false, true);
+            qm.createCsafSource("BSI WID", "https://wid.cert-bund.de/.well-known/csaf-aggregator/aggregator.json", false, true);
 
 
         }
