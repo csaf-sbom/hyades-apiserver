@@ -253,8 +253,7 @@ public class DefaultObjectGenerator implements ServletContextListener {
             qm.addUserToTeam(admin, sysadmins);
 
             admin = qm.getObjectById(ManagedUser.class, admin.getId());
-            var permissions = qm.getPermissions();
-            admin.setPermissions(permissions);
+            admin.setPermissions(qm.getPermissions());
             qm.persist(admin);
         }
     }
