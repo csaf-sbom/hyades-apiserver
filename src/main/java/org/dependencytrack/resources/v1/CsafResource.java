@@ -156,6 +156,8 @@ public class CsafResource extends AlpineResource {
          * }
          */
         try (QueryManager qm = new QueryManager()) {
+            // TODO Quickfix: the client will not send the aggregator flag, therefore apply it manually
+            jsonEntity.setAggregator(true);
             var csafEntity = qm.updateCsafSource(jsonEntity);
             if(csafEntity == null) {
                 return Response.status(Response.Status.NOT_FOUND)
