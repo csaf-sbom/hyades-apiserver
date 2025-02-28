@@ -25,7 +25,7 @@
             <column name="ID" autoIncrement="true" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="CSAFDOCUMENTENTITY_PK" />
             </column>
-            <column name="NAME" type="VARCHAR(255)">
+            <column name="NAME" type="VARCHAR(2048)"><!-- highest encountered len so far: 1257 -->
                 <constraints nullable="false" />
             </column>
             <column name="URL" type="VARCHAR(1024)">
@@ -54,5 +54,13 @@
         <sql>
             CREATE INDEX searchvector_idx ON "CSAFDOCUMENTENTITY" USING GIN (searchvector);
         </sql>
+    </changeSet>
+    <changeSet id="csaf-3" author="FhG">
+        <addColumn tableName="VULNERABILITYALIAS">
+            <column name="CSAF_ID" type="VARCHAR(255)"/>
+        </addColumn>
+        <createIndex indexName="VULNERABILITYALIAS_CSAF_ID_IDX" tableName="VULNERABILITYALIAS">
+            <column name="CSAF_ID"/>
+        </createIndex>
     </changeSet>
 </databaseChangeLog>
