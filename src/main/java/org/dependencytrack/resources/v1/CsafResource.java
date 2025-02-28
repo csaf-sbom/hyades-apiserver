@@ -363,7 +363,7 @@ public class CsafResource extends AlpineResource {
                     id);
             if (csafEntity != null) {
                 qm.toggleCsafDocumentSeen(csafEntity);
-                return Response.status(Response.Status.NO_CONTENT).build();
+                return Response.ok(csafEntity).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND).
                         entity("The id of the CSAF document could not be found.").build();
