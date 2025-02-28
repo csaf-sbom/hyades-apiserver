@@ -21,6 +21,7 @@ package org.dependencytrack.persistence;
 import alpine.common.logging.Logger;
 import alpine.persistence.PaginatedResult;
 import alpine.resources.AlpineRequest;
+import org.datanucleus.store.rdbms.query.ForwardQueryResult;
 import org.dependencytrack.model.CsafDocumentEntity;
 import org.dependencytrack.model.CsafSourceEntity;
 
@@ -28,12 +29,15 @@ import javax.annotation.Nullable;
 import javax.jdo.JDOObjectNotFoundException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.dependencytrack.util.PersistenceUtil.applyIfChanged;
 
 public class CsafQueryManager extends QueryManager implements IQueryManager {
     private static final Logger LOGGER = Logger.getLogger(CsafQueryManager.class);
+
     /**
      * Constructs a new CsafQueryManager.
      *
@@ -65,15 +69,16 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     public PaginatedResult getCsafSources(boolean isAggregator, boolean isDiscovered) {
         final Query<CsafSourceEntity> query = pm.newQuery(CsafSourceEntity.class);
         query.filter("aggregator == :aggregator && discovery == :discovered");
-        if(orderBy == null) query.setOrdering("id desc");
+        if (orderBy == null) query.setOrdering("id desc");
 
         return execute(query, isAggregator, isDiscovered);
     }
 
     /**
      * Creates a new CSAF Entity
-     * @param name Name of the CSAF entity
-     * @param url URL of the configured source
+     *
+     * @param name    Name of the CSAF entity
+     * @param url     URL of the configured source
      * @param enabled True, if source should be used for mirroring
      * @return the created CSAF entity
      */
@@ -112,6 +117,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
 
     /**
      * Synchronizes a batch of {@link CsafDocumentEntity} records.
+     *
      * @param list the batch of {@link CsafDocumentEntity} records to synchronize
      */
     public void synchronizeAllCsafDocuments(List<CsafDocumentEntity> list) {
@@ -146,7 +152,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      */
     @Override
     public @Nullable CsafSourceEntity updateCsafSource(CsafSourceEntity source) {
-        LOGGER.debug("Updating within CsafQueryManager "+ source.getId());
+        LOGGER.debug("Updating within CsafQueryManager " + source.getId());
         try {
             final CsafSourceEntity existing = getObjectById(CsafSourceEntity.class, source.getId());
             applyIfChanged(existing, source, CsafSourceEntity::getName, existing::setName);
@@ -164,22 +170,18 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     @Override
-    public PaginatedResult getCsafDocuments(String searchText, int pageSize, int pageNumber) {
-        if(searchText.isBlank()) {
-            final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
-            if(orderBy == null) query.setOrdering("id desc");
+    public PaginatedResult getCsafDocuments() {
+        final Query<CsafDocumentEntity> query = pm.newQuery(CsafDocumentEntity.class);
+        if (orderBy == null) query.setOrdering("id desc");
 
-            return execute(query);
-        } else {
-            return searchCsafDocuments(searchText, pageSize, pageNumber);
-        }
+        return execute(query);
     }
 
     /**
      * Retrieves a specific CSAF document by its publisher namespace and tracking ID, which makes it unique.
      *
      * @param publisherNamespace the publisher namespace
-     * @param trackingID the tracking ID
+     * @param trackingID         the tracking ID
      * @return the CSAF document entity (or null if it does not exist)
      */
     public @Nullable CsafDocumentEntity getCsafDocumentByPublisherNamespaceAndTrackingID(String publisherNamespace, String trackingID) {
@@ -189,18 +191,44 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     @Override
-    public PaginatedResult searchCsafDocuments(String searchText, int pageSize, int pageNumber) {
-        Query query = pm.newQuery("javax.jdo.query.SQL",
-                "SELECT * FROM \"CSAFDOCUMENTENTITY\" " +
-                        "WHERE searchvector @@ to_tsquery(?) "
-                        ); // +"ORDER BY \"ID\" DESC
-        query.setParameters(searchText);
+    public PaginatedResult searchCsafDocuments(String searchText, int pageSize, int pageNumber, String sortName, String sortOrder) {
+        String totalSql = "SELECT COUNT(*) FROM public.\"CSAFDOCUMENTENTITY\" ";
+        ArrayList<Object> totalQueryParams = new ArrayList<Object>();
+        if (!searchText.isBlank()) {
+            totalSql += "WHERE searchvector @@ to_tsquery(?) ";
+            totalQueryParams.add(searchText);
+        }
+        var totalQuery = pm.newQuery("javax.jdo.query.SQL", totalSql);
+        ForwardQueryResult<Long> totalQueryResult = (ForwardQueryResult<Long>) totalQuery.execute(totalQueryParams.toArray());
+        long total = totalQueryResult.getFirst();
+
+        // Construct query
+        StringBuilder docSql = new StringBuilder("SELECT \"ID\",\"NAME\",\"URL\",\"SEEN\",\"LASTFETCHED\",\"PUBLISHERNAMESPACE\",\"TRACKINGID\",\"TRACKINGVERSION\" FROM public.\"CSAFDOCUMENTENTITY\" ");
+        ArrayList<Object> docParams = new ArrayList<>();
+        if(!searchText.isBlank()) {
+            docSql.append("WHERE searchvector @@ to_tsquery(?) ");
+            docParams.add(searchText);
+        }
+        if(!sortName.isBlank() && ALLOWED_SORT_COLUMNS.containsKey(sortName) && !sortOrder.isBlank() && ALLOWED_SORT_ORDERS.containsKey(sortOrder)) {
+            docSql.append("ORDER BY ");
+            docSql.append(ALLOWED_SORT_COLUMNS.get(sortName));
+            docSql.append(" ");
+            docSql.append(ALLOWED_SORT_ORDERS.get(sortOrder));
+            docSql.append(" ");
+        }
+        docSql.append("LIMIT ? OFFSET ? ");
+        long offset = (long) (pageNumber - 1) * pageSize;
+        docParams.add(pageSize);
+        docParams.add(offset);
+
+        var query = pm.newQuery("javax.jdo.query.SQL", docSql.toString());
+        query.setParameters(docParams.toArray());
         query.setResultClass(CsafDocumentEntity.class);
         List<CsafDocumentEntity> results = query.executeList();
 
         PaginatedResult pr = new PaginatedResult();
         pr.setObjects(results);
-        pr.setTotal(results.size());
+        pr.setTotal(total);
         return pr;
     }
 
@@ -212,9 +240,9 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      */
     @Override
     public CsafDocumentEntity updateCsafDocument(CsafDocumentEntity csaf) {
-        LOGGER.debug("Updating within CsafQueryManager "+ csaf.getId());
+        LOGGER.debug("Updating within CsafQueryManager " + csaf.getId());
         final CsafDocumentEntity existing = getCsafDocumentByPublisherNamespaceAndTrackingID(csaf.getPublisherNamespace(), csaf.getTrackingID());
-        if(existing != null) {
+        if (existing != null) {
             applyIfChanged(existing, csaf, CsafDocumentEntity::getName, existing::setName);
             applyIfChanged(existing, csaf, CsafDocumentEntity::getUrl, existing::setUrl);
             applyIfChanged(existing, csaf, CsafDocumentEntity::getContent, existing::setContent);
@@ -236,4 +264,16 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
         return false;
     }
 
+    private static final Map<String, String> ALLOWED_SORT_COLUMNS = Map.of(
+            "id", "\"ID\"",
+            "name", "\"NAME\"",
+            "publisherNamespace", "\"PUBLISHERNAMESPACE\"",
+            "trackingVersion", "\"TRACKINGVERSION\"",
+            "lastFetched", "\"LASTFETCHED\"",
+            "seen", "\"SEEN\""
+    );
+    private static final Map<String, String> ALLOWED_SORT_ORDERS = Map.of(
+            "asc", "ASC",
+            "desc", "DESC"
+    );
 }

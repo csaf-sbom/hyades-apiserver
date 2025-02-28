@@ -283,14 +283,14 @@ public class CsafResource extends AlpineResource {
     @Operation(summary = "Returns a list of CSAF documents", description = "<p>Requires permission <strong>CSAF_MANAGEMENT</strong></p>")
     @PaginatedApi
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "A list of CSAF documents", headers = @Header(name = TOTAL_COUNT_HEADER, description = "The total number of CSAF documents", schema = @Schema(type = "integer")), content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafDocumentEntity.class)))),
+            @ApiResponse(responseCode = "200", description = "A list of CSAF documents", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CsafDocumentEntity.class)))),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PermissionRequired(Permissions.Constants.CSAF_MANAGEMENT)
-    public Response getCsafDocuments(@QueryParam("searchText") String searchText, @QueryParam("pageSize") int pageSize, @QueryParam("pageNumber") int pageNumber) {
+    public Response getCsafDocuments(@QueryParam("searchText") String searchText, @QueryParam("pageSize") int pageSize, @QueryParam("pageNumber") int pageNumber, @QueryParam("sortName") String sortName, @QueryParam("sortOrder") String sortOrder) {
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            var results = qm.getCsafDocuments(searchText, pageSize, pageNumber);
-            return Response.ok(results.getObjects()).header(TOTAL_COUNT_HEADER, results.getTotal()).build();
+            var results = qm.searchCsafDocuments(searchText, pageSize, pageNumber, sortName, sortOrder);
+            return Response.ok(results).build();
         }
     }
 
