@@ -199,17 +199,19 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
             totalQueryParams.add(searchText);
         }
         var totalQuery = pm.newQuery("javax.jdo.query.SQL", totalSql);
-        ForwardQueryResult<Long> totalQueryResult = (ForwardQueryResult<Long>) totalQuery.execute(totalQueryParams.toArray());
+
+        Object totalRawResult = (searchText.isBlank()) ? totalQuery.execute() : totalQuery.execute(searchText);
+        ForwardQueryResult<Long> totalQueryResult = (ForwardQueryResult<Long>) totalRawResult;
         long total = totalQueryResult.getFirst();
 
         // Construct query
         StringBuilder docSql = new StringBuilder("SELECT \"ID\",\"NAME\",\"URL\",\"SEEN\",\"LASTFETCHED\",\"PUBLISHERNAMESPACE\",\"TRACKINGID\",\"TRACKINGVERSION\" FROM public.\"CSAFDOCUMENTENTITY\" ");
         ArrayList<Object> docParams = new ArrayList<>();
-        if(!searchText.isBlank()) {
+        if (!searchText.isBlank()) {
             docSql.append("WHERE searchvector @@ to_tsquery(?) ");
             docParams.add(searchText);
         }
-        if(!sortName.isBlank() && ALLOWED_SORT_COLUMNS.containsKey(sortName) && !sortOrder.isBlank() && ALLOWED_SORT_ORDERS.containsKey(sortOrder)) {
+        if (!sortName.isBlank() && ALLOWED_SORT_COLUMNS.containsKey(sortName) && !sortOrder.isBlank() && ALLOWED_SORT_ORDERS.containsKey(sortOrder)) {
             docSql.append("ORDER BY ");
             docSql.append(ALLOWED_SORT_COLUMNS.get(sortName));
             docSql.append(" ");
