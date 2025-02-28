@@ -215,6 +215,8 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
             docSql.append(" ");
             docSql.append(ALLOWED_SORT_ORDERS.get(sortOrder));
             docSql.append(" ");
+        } else {
+            docSql.append("ORDER BY \"ID\" ASC ");
         }
         docSql.append("LIMIT ? OFFSET ? ");
         long offset = (long) (pageNumber - 1) * pageSize;
