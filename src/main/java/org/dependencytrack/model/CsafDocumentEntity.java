@@ -163,4 +163,21 @@ public class CsafDocumentEntity implements Serializable {
         this.lastFetched = lastFetched;
     }
 
+    public void setLastFetched(java.sql.Timestamp lastFetched) {
+        setLastFetched(lastFetched.toInstant());
+    }
+
+    @Override
+    public String toString() {
+        return "CsafDocumentEntity{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                ", publisherNamespace='" + publisherNamespace + '\'' +
+                ", trackingID='" + trackingID + '\'' +
+                ", trackingVersion='" + trackingVersion + '\'' +
+                ", seen=" + seen +
+                ", lastFetched=" + lastFetched +
+                '}';
+    }
 }

@@ -164,4 +164,19 @@ public class CsafSourceEntity implements Serializable {
     public void setDiscovery(boolean discovery) {
         this.discovery = discovery;
     }
+
+    @Override
+    public String toString() {
+        return "CsafSourceEntity{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                ", enabled=" + enabled +
+                ", content='" + content + '\'' +
+                ", seen=" + seen +
+                ", lastFetched=" + lastFetched +
+                ", aggregator=" + aggregator +
+                ", discovery=" + discovery +
+                '}';
+    }
 }

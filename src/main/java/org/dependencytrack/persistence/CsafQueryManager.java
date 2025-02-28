@@ -157,7 +157,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
             applyIfChanged(existing, source, CsafSourceEntity::isAggregator, existing::setAggregator);
             applyIfChanged(existing, source, CsafSourceEntity::isDiscovery, existing::setDiscovery);
             applyIfChanged(existing, source, CsafSourceEntity::isSeen, existing::setSeen);
-            return existing;
+            return persist(existing);
         } catch (JDOObjectNotFoundException e) {
             return null;
         }
