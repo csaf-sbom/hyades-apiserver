@@ -42,55 +42,7 @@ import io.github.resilience4j.retry.RetryConfig;
 import org.apache.commons.lang3.ClassUtils;
 import org.datanucleus.PropertyNames;
 import org.datanucleus.api.jdo.JDOQuery;
-import org.dependencytrack.model.AffectedVersionAttribution;
-import org.dependencytrack.model.Analysis;
-import org.dependencytrack.model.AnalyzerIdentity;
-import org.dependencytrack.model.Bom;
-import org.dependencytrack.model.Classifier;
-import org.dependencytrack.model.Component;
-import org.dependencytrack.model.ComponentIdentity;
-import org.dependencytrack.model.ComponentMetaInformation;
-import org.dependencytrack.model.ComponentOccurrence;
-import org.dependencytrack.model.ComponentProperty;
-import org.dependencytrack.model.ConfigPropertyConstants;
-import org.dependencytrack.model.CsafDocumentEntity;
-import org.dependencytrack.model.CsafSourceEntity;
-import org.dependencytrack.model.DependencyMetrics;
-import org.dependencytrack.model.Epss;
-import org.dependencytrack.model.FindingAttribution;
-import org.dependencytrack.model.IntegrityAnalysis;
-import org.dependencytrack.model.IntegrityMatchStatus;
-import org.dependencytrack.model.IntegrityMetaComponent;
-import org.dependencytrack.model.License;
-import org.dependencytrack.model.LicenseGroup;
-import org.dependencytrack.model.NotificationPublisher;
-import org.dependencytrack.model.NotificationRule;
-import org.dependencytrack.model.Policy;
-import org.dependencytrack.model.PolicyCondition;
-import org.dependencytrack.model.PolicyViolation;
-import org.dependencytrack.model.PortfolioMetrics;
-import org.dependencytrack.model.Project;
-import org.dependencytrack.model.ProjectMetrics;
-import org.dependencytrack.model.ProjectProperty;
-import org.dependencytrack.model.Repository;
-import org.dependencytrack.model.RepositoryMetaComponent;
-import org.dependencytrack.model.RepositoryType;
-import org.dependencytrack.model.ServiceComponent;
-import org.dependencytrack.model.Tag;
-import org.dependencytrack.model.Vex;
-import org.dependencytrack.model.ViolationAnalysis;
-import org.dependencytrack.model.ViolationAnalysisComment;
-import org.dependencytrack.model.ViolationAnalysisState;
-import org.dependencytrack.model.VulnIdAndSource;
-import org.dependencytrack.model.Vulnerability;
-import org.dependencytrack.model.VulnerabilityAlias;
-import org.dependencytrack.model.VulnerabilityMetrics;
-import org.dependencytrack.model.VulnerabilityPolicyBundle;
-import org.dependencytrack.model.VulnerabilityScan;
-import org.dependencytrack.model.VulnerableSoftware;
-import org.dependencytrack.model.WorkflowState;
-import org.dependencytrack.model.WorkflowStatus;
-import org.dependencytrack.model.WorkflowStep;
+import org.dependencytrack.model.*;
 import org.dependencytrack.notification.NotificationScope;
 import org.dependencytrack.notification.publisher.PublisherClass;
 import org.dependencytrack.persistence.jdbi.EffectivePermissionDao;
@@ -101,6 +53,7 @@ import org.dependencytrack.proto.vulnanalysis.v1.ScannerResult;
 import org.dependencytrack.resources.v1.vo.DependencyGraphResponse;
 import org.dependencytrack.tasks.IntegrityMetaInitializerTask;
 
+import javax.annotation.Nullable;
 import javax.jdo.FetchPlan;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
@@ -1133,7 +1086,7 @@ public class QueryManager extends AlpineQueryManager {
         getCsafQueryManager().synchronizeAllCsafDocuments(list);
     }
 
-    public CsafDocumentEntity synchronizeCsafDocument(CsafDocumentEntity csaf){
+    public CsafDocumentEntity synchronizeCsafDocument(CsafDocumentEntity csaf) {
         return getCsafQueryManager().synchronizeCsafDocument(csaf);
     }
 
@@ -1143,6 +1096,14 @@ public class QueryManager extends AlpineQueryManager {
 
     public boolean toggleCsafDocumentSeen(CsafDocumentEntity csafDocument) {
         return getCsafQueryManager().toggleCsafDocumentSeen(csafDocument);
+    }
+
+    public @Nullable CsafDocumentEntity getCsafDocumentByPublisherNamespaceAndTrackingID(String publisherNamespace, String trackingID) {
+        return getCsafQueryManager().getCsafDocumentByPublisherNamespaceAndTrackingID(publisherNamespace, trackingID);
+    }
+
+    public CsafMapping createCsafMapping(Vulnerability synchronizedVulnerability, CsafDocumentEntity referenceDoc) {
+        return getCsafQueryManager().createCsafMapping(synchronizedVulnerability, referenceDoc);
     }
 
     public PaginatedResult getRepositories() {
