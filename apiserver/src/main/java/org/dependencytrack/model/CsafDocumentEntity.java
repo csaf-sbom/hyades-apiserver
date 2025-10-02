@@ -163,7 +163,7 @@ public class CsafDocumentEntity implements Serializable {
         return manuallyAdded;
     }
 
-    public void setManuallyAdded(Boolean manuallyAdded) {
+    public void setManuallyAdded(boolean manuallyAdded) {
         this.manuallyAdded = manuallyAdded;
     }
 

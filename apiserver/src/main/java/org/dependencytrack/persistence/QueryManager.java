@@ -1103,8 +1103,8 @@ public class QueryManager extends AlpineQueryManager {
         return getCsafQueryManager().updateCsafDocument(csaf);
     }
 
-    public boolean toggleCsafDocumentSeen(CsafDocumentEntity csafDocument) {
-        return getCsafQueryManager().toggleCsafDocumentSeen(csafDocument);
+    public void toggleCsafDocumentSeen(CsafDocumentEntity csafDocument) {
+        getCsafQueryManager().toggleCsafDocumentSeen(csafDocument);
     }
 
     public @Nullable CsafDocumentEntity getCsafDocumentByPublisherNamespaceAndTrackingID(String publisherNamespace, String trackingID) {
