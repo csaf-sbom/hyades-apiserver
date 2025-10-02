@@ -156,7 +156,7 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
      */
     @Override
     public @Nullable CsafSourceEntity updateCsafSource(CsafSourceEntity source) {
-        LOGGER.debug("Updating within CsafQueryManager " + source.getId());
+        LOGGER.debug("Updating CSAF source ID " + source.getId());
         try {
             final CsafSourceEntity existing = getObjectById(CsafSourceEntity.class, source.getId());
             applyIfChanged(existing, source, CsafSourceEntity::getName, existing::setName);
@@ -275,10 +275,10 @@ public class CsafQueryManager extends QueryManager implements IQueryManager {
     }
 
     @Override
-    public boolean toggleCsafDocumentSeen(CsafDocumentEntity csafDocument) {
+    public void toggleCsafDocumentSeen(CsafDocumentEntity csafDocument) {
         csafDocument.setSeen(!csafDocument.isSeen());
         pm.makePersistent(csafDocument);
-        return false;
+        return;
     }
 
     private static final Map<String, String> ALLOWED_SORT_COLUMNS = Map.of(
