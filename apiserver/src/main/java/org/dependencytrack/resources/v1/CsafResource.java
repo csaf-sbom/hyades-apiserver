@@ -46,7 +46,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.model.CsafDocumentEntity;
@@ -163,7 +162,6 @@ public class CsafResource extends AlpineResource {
             return Response.status(Response.Status.BAD_REQUEST).entity("Invalid domain or url").build();
         }
         try (QueryManager qm = new QueryManager()) {
-            // TODO Quickfix: the client will not send the aggregator flag, therefore apply it manually
             jsonEntity.setAggregator(true);
             jsonEntity.setDomain(CsafUtil.validateDomain(jsonEntity.getUrl()));
             var csafEntity = qm.updateCsafSource(jsonEntity);
