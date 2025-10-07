@@ -62,7 +62,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.dependencytrack.model.ConfigPropertyConstants.*;
+import static org.dependencytrack.model.ConfigPropertyConstants.FORTIFY_SSC_ENABLED;
+import static org.dependencytrack.model.ConfigPropertyConstants.DEFECTDOJO_ENABLED;
+import static org.dependencytrack.model.ConfigPropertyConstants.KENNA_ENABLED;
 import static org.dependencytrack.util.TaskUtil.getCronScheduleForTask;
 
 /**

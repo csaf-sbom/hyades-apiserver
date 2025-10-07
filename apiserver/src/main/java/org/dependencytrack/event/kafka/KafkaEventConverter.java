@@ -24,8 +24,6 @@ import com.google.protobuf.Message;
 import org.dependencytrack.event.ComponentRepositoryMetaAnalysisEvent;
 import org.dependencytrack.event.ComponentVulnerabilityAnalysisEvent;
 import org.dependencytrack.event.CsafMirrorEvent;
-import org.dependencytrack.event.GitHubAdvisoryMirrorEvent;
-import org.dependencytrack.event.NistMirrorEvent;
 import org.dependencytrack.event.OsvMirrorEvent;
 import org.dependencytrack.event.kafka.KafkaTopics.Topic;
 import org.dependencytrack.model.Vulnerability;
