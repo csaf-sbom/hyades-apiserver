@@ -64,7 +64,7 @@ public interface AdvisoryDao {
              ${apiOffsetLimitClause!}
             """)
     @RegisterConstructorMapper(AdvisoryDao.AdvisoryRow.class)
-    List<AdvisoryDao.AdvisoryRow> getAdvisoriesByProject(@Bind long projectId, @Bind boolean includeSuppressed);
+    List<AdvisoryDao.AdvisoryRow> getAdvisoriesByProject(@Bind long projectId);
 
     record AdvisoryResult(
             CsafDocumentEntity entity,
@@ -166,7 +166,7 @@ public interface AdvisoryDao {
             <#-- @ftlvariable name="apiOffsetLimitClause" type="String" -->
 
             SELECT "CSAFDOCUMENTENTITY"."NAME" as "name",
-            COUNT("PROJECT_ID") AS "affectedComponents",
+            COUNT(DISTINCT "FINDINGATTRIBUTION"."COMPONENT_ID") AS "affectedComponents",
             COUNT(DISTINCT "PROJECT_ID") AS "affectedProjects",
             "URL" AS "url",
             "CSAFDOCUMENTENTITY"."ID" AS "documentId"
