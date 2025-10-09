@@ -136,15 +136,17 @@ public class AdvisoriesResource extends AbstractApiResource {
         try (QueryManager qm = new QueryManager()) {
             final var advisoryEntity = qm.getObjectById(CsafDocumentEntity.class, advisoryId);
 
-            List<AdvisoryDao.ProjectRow> affectedProjects = withJdbiHandle(getAlpineRequest(), handle ->
-                    handle.attach(AdvisoryDao.class).getProjectsByAdvisory(advisoryEntity.getId()));
-
-            List<AdvisoryDao.VulnerabilityRow> vulnerabilities = withJdbiHandle(getAlpineRequest(), handle ->
-                    handle.attach(AdvisoryDao.class).getVulnerabilitiesByAdvisory(advisoryEntity.getId()));
-
             if (advisoryEntity == null) {
-                return Response.status(Response.Status.NOT_FOUND).entity("The requested CSAF document could not be found.").build();
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("The requested CSAF document could not be found.")
+                        .build();
             } else {
+                List<AdvisoryDao.ProjectRow> affectedProjects = withJdbiHandle(getAlpineRequest(), handle ->
+                        handle.attach(AdvisoryDao.class).getProjectsByAdvisory(advisoryEntity.getId()));
+
+                List<AdvisoryDao.VulnerabilityRow> vulnerabilities = withJdbiHandle(getAlpineRequest(), handle ->
+                        handle.attach(AdvisoryDao.class).getVulnerabilitiesByAdvisory(advisoryEntity.getId()));
+
                 return Response.ok(new AdvisoryDao.AdvisoryResult(
                         advisoryEntity,
                         affectedProjects,
