@@ -212,7 +212,7 @@ public class CsafResource extends AlpineResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Creates a new CSAF provider", description = "<p>Requires permission <strong>VULNERABILITY_MANAGEMENT_CREATE</strong></p>")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "The created CSAF provider", content = @Content(schema = @Schema(implementation = Repository.class))),
+            @ApiResponse(responseCode = "201", description = "The created CSAF provider", content = @Content(schema = @Schema(implementation = CsafSourceEntity.class))),
             @ApiResponse(responseCode = "400", description = "Invalid domain or url"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "409", description = "An provider with the specified identifier already exists")
