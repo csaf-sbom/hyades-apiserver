@@ -147,9 +147,13 @@ public class AdvisoriesResource extends AbstractApiResource {
                 List<AdvisoryDao.VulnerabilityRow> vulnerabilities = withJdbiHandle(getAlpineRequest(), handle ->
                         handle.attach(AdvisoryDao.class).getVulnerabilitiesByAdvisory(advisoryEntity.getId()));
 
+                long numAffectedComponents = withJdbiHandle(getAlpineRequest(), handle ->
+                        handle.attach(AdvisoryDao.class).getAmountFindingsTotal(advisoryEntity.getId()));
+
                 return Response.ok(new AdvisoryDao.AdvisoryResult(
                         advisoryEntity,
                         affectedProjects,
+                        numAffectedComponents,
                         vulnerabilities
                 )).build();
             }

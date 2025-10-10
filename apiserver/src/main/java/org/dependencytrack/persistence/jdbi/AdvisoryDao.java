@@ -64,11 +64,12 @@ public interface AdvisoryDao {
              ${apiOffsetLimitClause!}
             """)
     @RegisterConstructorMapper(AdvisoryDao.AdvisoryRow.class)
-    List<AdvisoryDao.AdvisoryRow> getAdvisoriesByProject(@Bind long projectId);
+    List<AdvisoryDao.AdvisoryRow> getAdvisoriesByProject(@Bind long projectId, @Bind boolean suppressed);
 
     record AdvisoryResult(
             CsafDocumentEntity entity,
             List<ProjectRow> affectedProjects,
+            long numAffectedComponents,
             List<AdvisoryDao.VulnerabilityRow> vulnerabilities
     ) {
     }
