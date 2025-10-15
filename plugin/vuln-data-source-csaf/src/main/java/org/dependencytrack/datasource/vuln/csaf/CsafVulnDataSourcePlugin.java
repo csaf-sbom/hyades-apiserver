@@ -18,33 +18,21 @@
  */
 package org.dependencytrack.datasource.vuln.csaf;
 
-import org.cyclonedx.proto.v1_6.Bom;
-import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSource;
+import org.dependencytrack.plugin.api.ExtensionFactory;
+import org.dependencytrack.plugin.api.ExtensionPoint;
+import org.dependencytrack.plugin.api.Plugin;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @since 5.7.0
  */
-public class CsafVulnDataSource implements VulnDataSource {
-
-    private final Queue<String> advisoryQueue;
-    public final SourcesManager sourcesManager;
-
-    public CsafVulnDataSource(SourcesManager sourcesManager) {
-        this.advisoryQueue = new LinkedList<>();
-        this.sourcesManager = sourcesManager;
-    }
+public final class CsafVulnDataSourcePlugin implements Plugin {
 
     @Override
-    public boolean hasNext() {
-        return false;
-    }
-
-    @Override
-    public Bom next() {
-        return null;
+    public Collection<? extends ExtensionFactory<? extends ExtensionPoint>> extensionFactories() {
+        return List.of(new CsafVulnDataSourceFactory());
     }
 
 }

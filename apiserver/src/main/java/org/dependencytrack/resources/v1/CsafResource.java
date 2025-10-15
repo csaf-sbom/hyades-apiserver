@@ -21,7 +21,6 @@ package org.dependencytrack.resources.v1;
 import alpine.common.logging.Logger;
 import alpine.persistence.PaginatedResult;
 import alpine.server.auth.PermissionRequired;
-import alpine.server.resources.AlpineResource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,11 +33,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -47,16 +44,16 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.Provider;
 import org.dependencytrack.auth.Permissions;
+import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSource;
+import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceFactory;
 import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.model.CsafDocumentEntity;
 import org.dependencytrack.model.CsafSourceEntity;
 import org.dependencytrack.model.Repository;
 import org.dependencytrack.persistence.QueryManager;
-import org.dependencytrack.plugin.PluginManager;
-import org.dependencytrack.plugin.api.ExtensionFactory;
-import org.dependencytrack.plugin.api.ExtensionPointSpec;
-import org.dependencytrack.plugin.api.config.RuntimeConfigDefinition;
+import org.dependencytrack.resources.AbstractApiResource;
 import org.dependencytrack.resources.v1.openapi.PaginatedApi;
 import org.dependencytrack.tasks.CsafMirrorTask;
 import org.dependencytrack.util.CsafUtil;
@@ -67,9 +64,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Resource for vulnerability policies.
@@ -80,11 +74,9 @@ import java.util.stream.Collectors;
         @SecurityRequirement(name = "ApiKeyAuth"),
         @SecurityRequirement(name = "BearerAuth")
 })
-public class CsafResource extends AlpineResource {
+@Provider
+public class CsafResource extends AbstractApiResource {
     private static final Logger LOGGER = Logger.getLogger(CsafResource.class);
-
-    @Inject
-    private PluginManager pluginManager;
 
     @POST
     @Path("/trigger-mirror/")
@@ -113,6 +105,7 @@ public class CsafResource extends AlpineResource {
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_READ)
     public Response getCsafAggregators(@QueryParam("searchText") String searchText, @QueryParam("pageSize") int pageSize, @QueryParam("pageNumber") int pageNumber) {
         String extensionPointName = "csaf";
+        /*var pluginManager = PluginManager.getInstance();
 
         final ExtensionPointSpec<?> extensionPoint =
                 pluginManager.getExtensionPoints().stream()
@@ -122,7 +115,7 @@ public class CsafResource extends AlpineResource {
 
         final ExtensionFactory<?> extensionFactory =
                 pluginManager.getFactories(extensionPoint.extensionPointClass()).stream()
-                        .filter(factory -> factory.extensionName().equals(extensionName))
+                        .filter(factory -> factory.extensionName().equals("vuln.datasource"))
                         .findAny()
                         .orElseThrow(NotFoundException::new);
 
@@ -130,7 +123,10 @@ public class CsafResource extends AlpineResource {
                 extensionFactory.runtimeConfigs().stream()
                         .collect(Collectors.toMap(
                                 RuntimeConfigDefinition::name,
-                                Function.identity()));
+                                Function.identity()));*/
+
+        CsafVulnDataSource dataSource = (CsafVulnDataSource) new CsafVulnDataSourceFactory().create();
+        var sources = dataSource.sourcesManager.getSources();
 
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
             final PaginatedResult result = qm.getCsafSources(true, false);
