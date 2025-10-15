@@ -34,9 +34,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -51,6 +53,10 @@ import org.dependencytrack.model.CsafDocumentEntity;
 import org.dependencytrack.model.CsafSourceEntity;
 import org.dependencytrack.model.Repository;
 import org.dependencytrack.persistence.QueryManager;
+import org.dependencytrack.plugin.PluginManager;
+import org.dependencytrack.plugin.api.ExtensionFactory;
+import org.dependencytrack.plugin.api.ExtensionPointSpec;
+import org.dependencytrack.plugin.api.config.RuntimeConfigDefinition;
 import org.dependencytrack.resources.v1.openapi.PaginatedApi;
 import org.dependencytrack.tasks.CsafMirrorTask;
 import org.dependencytrack.util.CsafUtil;
@@ -61,6 +67,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Resource for vulnerability policies.
@@ -73,6 +82,9 @@ import java.time.Instant;
 })
 public class CsafResource extends AlpineResource {
     private static final Logger LOGGER = Logger.getLogger(CsafResource.class);
+
+    @Inject
+    private PluginManager pluginManager;
 
     @POST
     @Path("/trigger-mirror/")
@@ -100,6 +112,26 @@ public class CsafResource extends AlpineResource {
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_READ)
     public Response getCsafAggregators(@QueryParam("searchText") String searchText, @QueryParam("pageSize") int pageSize, @QueryParam("pageNumber") int pageNumber) {
+        String extensionPointName = "csaf";
+
+        final ExtensionPointSpec<?> extensionPoint =
+                pluginManager.getExtensionPoints().stream()
+                        .filter(spec -> spec.name().equals(extensionPointName))
+                        .findAny()
+                        .orElseThrow(NotFoundException::new);
+
+        final ExtensionFactory<?> extensionFactory =
+                pluginManager.getFactories(extensionPoint.extensionPointClass()).stream()
+                        .filter(factory -> factory.extensionName().equals(extensionName))
+                        .findAny()
+                        .orElseThrow(NotFoundException::new);
+
+        final Map<String, RuntimeConfigDefinition<?>> configByName =
+                extensionFactory.runtimeConfigs().stream()
+                        .collect(Collectors.toMap(
+                                RuntimeConfigDefinition::name,
+                                Function.identity()));
+
         try (QueryManager qm = new QueryManager(getAlpineRequest())) {
             final PaginatedResult result = qm.getCsafSources(true, false);
             return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();

@@ -18,6 +18,7 @@
  */
 package org.dependencytrack.datasource.vuln.osv;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dependencytrack.plugin.api.config.ConfigTypes;
 import org.dependencytrack.plugin.api.config.RuntimeConfigDefinition;
 
