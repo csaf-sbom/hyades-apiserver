@@ -62,12 +62,14 @@ import org.dependencytrack.util.CsafUtil;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 /**
@@ -165,7 +167,7 @@ public class CsafResource extends AbstractApiResource {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "404", description = "The ID of the aggregator could not be found")
     })
-    @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_UPDATE) // TODO create update only permission
+    @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_UPDATE)
     public Response updateCsafAggregator(CsafSource source) {
         // Validate URL (which can either be a domain or a full URL)
         if (!CsafUtil.validateUrlOrDomain(source.getUrl())) {
@@ -173,14 +175,11 @@ public class CsafResource extends AbstractApiResource {
         }
 
         // Fetch existing aggregators and look for the one to update
-        var sources = new ArrayList<>(getCsafSourcesFromConfig(CsafSource::isAggregator));
-        var existingSource = sources.stream()
-                .filter(s -> s.getId() == source.getId())
-                .findFirst().orElse(null);
-
+        var sources = getCsafSourcesFromConfig(CsafSource::isAggregator);
+        var existingSource = getCsafSourceByIdFromConfig(sources, source.getId());
         if (existingSource == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("The URL of the aggregator could not be found.").build();
+                    .entity("The ID of the aggregator could not be found.").build();
         }
 
         // Update the existing aggregator
@@ -191,10 +190,6 @@ public class CsafResource extends AbstractApiResource {
 
         // Update config
         updateSourcesInConfig(sources);
-
-        // Add the new aggregator to the list. Make sure that the aggregator flag is set to true
-        source.setAggregator(true);
-        sources.add(source);
 
         return Response.ok(existingSource).build();
     }
@@ -211,18 +206,22 @@ public class CsafResource extends AbstractApiResource {
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_DELETE)
     public Response deleteCsafEntity(
-            @Parameter(description = "The csafEntryId of the CSAF source to delete", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("csafEntryId") String csafEntryId) {
-        try (QueryManager qm = new QueryManager()) {
-
-            final CsafSourceEntity csafEntity = qm.getObjectById(CsafSourceEntity.class, csafEntryId);
-            if (csafEntity != null) {
-                qm.delete(csafEntity);
-                return Response.status(Response.Status.NO_CONTENT).build();
-            } else {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity("The csafEntryId of the CSAF source could not be found.").build();
-            }
+            @Parameter(description = "The ID of the CSAF source to delete", schema = @Schema(type = "string", format = "long"), required = true) @PathParam("csafEntryId") int csafEntryId) {
+        // Fetch existing aggregators and look for the one to delete
+        var sources = getCsafSourcesFromConfig(CsafSource::isAggregator);
+        var source = getCsafSourceByIdFromConfig(sources, csafEntryId);
+        if (source == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("The ID of the aggregator could not be found.").build();
         }
+
+        // Remove the aggregator from the list
+        sources.remove(source);
+
+        // Update config
+        updateSourcesInConfig(sources);
+
+        return Response.status(Response.Status.NO_CONTENT).build();
     }
 
     @GET
@@ -459,7 +458,6 @@ public class CsafResource extends AbstractApiResource {
         }
     }
 
-
     /**
      * Returns a list of CSAF sources from the configuration, filtered by the provided predicate.
      *
@@ -467,9 +465,27 @@ public class CsafResource extends AbstractApiResource {
      * @return a list of CSAF sources
      */
     private static List<CsafSource> getCsafSourcesFromConfig(Predicate<CsafSource> filter) {
-        var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
-        var sourcesConfig = config.getValue(CsafVulnDataSourceConfigs.CONFIG_SOURCES);
-        return SourcesManager.deserializeSources(new ObjectMapper(), sourcesConfig).stream().filter(filter).toList();
+        try {
+            var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
+            var sourcesConfig = config.getValue(CsafVulnDataSourceConfigs.CONFIG_SOURCES);
+            return SourcesManager.deserializeSources(new ObjectMapper(), sourcesConfig).stream().filter(filter).toList();
+        } catch (NoSuchElementException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Returns a CSAF source  by its ID from the configuration.
+     *
+     * @param id the ID of the CSAF source
+     * @return the CSAF source, or null if not found
+     */
+    @Nullable
+    private static CsafSource getCsafSourceByIdFromConfig(List<CsafSource> sources, int id) {
+        // Fetch existing aggregators and look for the specific one
+        return sources.stream()
+                .filter(s -> s.getId() == id)
+                .findFirst().orElse(null);
     }
 
     /**

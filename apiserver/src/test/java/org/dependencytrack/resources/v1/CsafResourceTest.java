@@ -26,20 +26,52 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.dependencytrack.JerseyTestRule;
 import org.dependencytrack.ResourceTest;
-import org.dependencytrack.model.CsafSourceEntity;
+import org.dependencytrack.datasource.vuln.csaf.CsafSource;
+import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceFactory;
+import org.dependencytrack.plugin.ConfigRegistryImpl;
+import org.dependencytrack.plugin.PluginManager;
+import org.dependencytrack.plugin.PluginManagerBinder;
+import org.dependencytrack.plugin.api.ExtensionFactory;
+import org.dependencytrack.plugin.api.ExtensionPointSpec;
+import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSource;
+import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSourceSpec;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+
 public class CsafResourceTest extends ResourceTest {
+
+    private static final PluginManager PLUGIN_MANAGER_MOCK = mock(PluginManager.class);
 
     @ClassRule
     public static JerseyTestRule jersey = new JerseyTestRule(
             new ResourceConfig(CsafResource.class)
                     .register(ApiFilter.class)
-                    .register(AuthenticationFilter.class));
+                    .register(AuthenticationFilter.class)
+                    .register(PluginManagerBinder.class)
+                    .register(new AbstractBinder() {
+                        @Override
+                        protected void configure() {
+                            bind(PLUGIN_MANAGER_MOCK).to(PluginManager.class);
+                        }
+                    }));
+
+    @After
+    public void after() {
+        reset(PLUGIN_MANAGER_MOCK);
+        super.after();
+    }
 
     @Before
     @Override
@@ -49,8 +81,16 @@ public class CsafResourceTest extends ResourceTest {
     }
 
     @Test
-    public void createCsafSourceTest() throws Exception {
-        CsafSourceEntity aggregator = new CsafSourceEntity();
+    public void createCsafSourceTest() {
+        final ExtensionPointSpec<VulnDataSource> extensionPointSpec = new VulnDataSourceSpec();
+        final ExtensionFactory<VulnDataSource> extensionFactory = new CsafVulnDataSourceFactory();
+        final var configRegistry = ConfigRegistryImpl.forExtension(extensionPointSpec.name(), extensionFactory.extensionName());
+        configRegistry.createWithDefaultsIfNotExist(extensionFactory.runtimeConfigs());
+
+        doReturn(List.of(extensionPointSpec)).when(PLUGIN_MANAGER_MOCK).getExtensionPoints();
+        doReturn(List.of(extensionFactory)).when(PLUGIN_MANAGER_MOCK).getFactories(eq(VulnDataSource.class));
+
+        CsafSource aggregator = new CsafSource();
         aggregator.setName("Testsource");
         aggregator.setUrl("example.com");
         aggregator.setEnabled(true);
