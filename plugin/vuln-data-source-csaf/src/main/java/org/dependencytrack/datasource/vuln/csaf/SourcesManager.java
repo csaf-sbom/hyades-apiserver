@@ -55,6 +55,16 @@ public class SourcesManager {
                 .orElse(new ArrayList<>());
     }
 
+    public static String serializeSources(
+            final ObjectMapper objectMapper,
+            final List<CsafSource> sources) {
+        try {
+            return objectMapper.writeValueAsString(sources);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static List<CsafSource> deserializeSources(
             final ObjectMapper objectMapper,
             final String serializedSources) {

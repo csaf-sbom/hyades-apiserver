@@ -18,7 +18,7 @@
  */
 package org.dependencytrack.datasource.vuln.csaf;
 
-import java.net.URL;
+import java.time.Instant;
 
 /**
  * A CSAF source, either an aggregator or a provider.
@@ -27,15 +27,21 @@ import java.net.URL;
  */
 public class CsafSource {
 
-    String name;
+    private int id;
 
-    URL url;
+    private String name;
 
-    boolean aggregator;
+    private String url;
+
+    private boolean aggregator;
+
+    private boolean enabled;
+
+    private Instant lastFetched;
 
     public CsafSource() {}
 
-    public CsafSource(String name, URL url, boolean isAggregator) {
+    public CsafSource(String name, String url, boolean isAggregator) {
         this.name = name;
         this.url = url;
         this.aggregator = isAggregator;
@@ -45,12 +51,51 @@ public class CsafSource {
         return name;
     }
 
-    public URL getUrl() {
+    public String getUrl() {
         return url;
     }
 
-    public boolean getAggregator() {
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public boolean isAggregator() {
         return aggregator;
     }
 
+    public void setAggregator(boolean aggregator) {
+        this.aggregator = aggregator;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public Instant getLastFetched() {
+        return lastFetched;
+    }
+
+    public void setLastFetched(Instant lastFetched) {
+        this.lastFetched = lastFetched;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 }

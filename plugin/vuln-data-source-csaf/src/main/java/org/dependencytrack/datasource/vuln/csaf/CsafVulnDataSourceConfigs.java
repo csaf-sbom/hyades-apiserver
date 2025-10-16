@@ -50,9 +50,8 @@ public class CsafVulnDataSourceConfigs {
         final String defaultSources;
         try {
             defaultSources = objectMapper.writeValueAsString(new ArrayList<>(List.of(
-                    new CsafSource("CERT-Bund CSAF Aggregator", defaultApiUrl, true)
+                    new CsafSource("CERT-Bund CSAF Aggregator", defaultApiUrl.toString(), true)
             )));
-
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize default sources", e);
         }

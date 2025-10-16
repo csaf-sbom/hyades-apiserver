@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.dependencytrack.auth.Permissions;
+import org.dependencytrack.datasource.vuln.csaf.CsafSource;
 import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceConfigs;
 import org.dependencytrack.datasource.vuln.csaf.SourcesManager;
 import org.dependencytrack.event.CsafMirrorEvent;
@@ -65,6 +66,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Resource for vulnerability policies.
@@ -105,9 +109,9 @@ public class CsafResource extends AbstractApiResource {
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_READ)
     public Response getCsafAggregators(@QueryParam("searchText") String searchText, @QueryParam("pageSize") int pageSize, @QueryParam("pageNumber") int pageNumber) {
-        var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
-        var sourcesConfig = config.getValue(CsafVulnDataSourceConfigs.CONFIG_SOURCES);
-        var sources = SourcesManager.deserializeSources(new ObjectMapper(), sourcesConfig);
+        var sources = getCsafSourcesFromConfig(filter -> filter.isAggregator() &&
+                (searchText == null || searchText.isEmpty()) || filter.getName().toLowerCase().contains(searchText.toLowerCase()) ||
+                        filter.getUrl().toLowerCase().contains(searchText.toLowerCase()));
 
         return Response.ok(sources).header(TOTAL_COUNT_HEADER, sources).build();
     }
@@ -121,20 +125,33 @@ public class CsafResource extends AbstractApiResource {
             @ApiResponse(responseCode = "201", description = "The created CSAF aggregator", content = @Content(schema = @Schema(implementation = Repository.class))),
             @ApiResponse(responseCode = "400", description = "Invalid domain or url"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "409", description = "An aggregator with the specified identifier already exists")
+            @ApiResponse(responseCode = "409", description = "An aggregator with the specified URL already exists")
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_CREATE)
-    public Response createCsafAggregator(CsafSourceEntity jsonEntity) {
-        if(!CsafUtil.validateUrlOrDomain(jsonEntity.getUrl())) {
+    public Response createCsafAggregator(CsafSource source) {
+        // Validate URL (which can either be a domain or a full URL)
+        if (!CsafUtil.validateUrlOrDomain(source.getUrl())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Invalid domain or url").build();
         }
-        try (QueryManager qm = new QueryManager()) {
-            final CsafSourceEntity csafEntity = qm.createCsafSource(jsonEntity.getName(), jsonEntity.getUrl(),
-                    jsonEntity.isEnabled(), true);
-            return Response.status(Response.Status.CREATED).entity(csafEntity).build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.CONFLICT).build();
+
+        // Fetch existing aggregators
+        var sources = new ArrayList<>(getCsafSourcesFromConfig(CsafSource::isAggregator));
+
+        // Ensure that the new aggregator does not already exist, by the URL
+        if (sources.stream().anyMatch(s -> s.getUrl().equalsIgnoreCase(source.getUrl()))) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity("An aggregator with the specified URL already exists").build();
         }
+
+        // Add the new aggregator to the list. Make sure that the aggregator flag is set to true
+        source.setAggregator(true);
+        source.setId(sources.size());
+        sources.add(source);
+
+        // Update config
+        updateSourcesInConfig(sources);
+
+        return Response.status(Response.Status.CREATED).entity(source).build();
     }
 
     @POST
@@ -146,27 +163,40 @@ public class CsafResource extends AbstractApiResource {
             @ApiResponse(responseCode = "200", description = "The updated CSAF aggregator", content = @Content(schema = @Schema(implementation = Repository.class))),
             @ApiResponse(responseCode = "400", description = "Invalid domain or url"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "404", description = "The csafEntryId of the aggregator could not be found")
+            @ApiResponse(responseCode = "404", description = "The ID of the aggregator could not be found")
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_UPDATE) // TODO create update only permission
-    public Response updateCsafAggregator(CsafSourceEntity jsonEntity) {
-        if(!CsafUtil.validateUrlOrDomain(jsonEntity.getUrl())) {
+    public Response updateCsafAggregator(CsafSource source) {
+        // Validate URL (which can either be a domain or a full URL)
+        if (!CsafUtil.validateUrlOrDomain(source.getUrl())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Invalid domain or url").build();
         }
 
-        try (QueryManager qm = new QueryManager()) {
-            jsonEntity.setAggregator(true);
-            jsonEntity.setDomain(CsafUtil.validateDomain(jsonEntity.getUrl()));
-            var csafEntity = qm.updateCsafSource(jsonEntity);
-            if(csafEntity == null) {
-                return Response.status(Response.Status.NOT_FOUND)
-                                .entity("The ID of the aggregator could not be found.").build();
-            }
-            return Response.ok(csafEntity).build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("The specified CSAF aggregator could not be updated").build();
+        // Fetch existing aggregators and look for the one to update
+        var sources = new ArrayList<>(getCsafSourcesFromConfig(CsafSource::isAggregator));
+        var existingSource = sources.stream()
+                .filter(s -> s.getId() == source.getId())
+                .findFirst().orElse(null);
+
+        if (existingSource == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("The URL of the aggregator could not be found.").build();
         }
+
+        // Update the existing aggregator
+        existingSource.setName(source.getName());
+        existingSource.setEnabled(source.isEnabled());
+        existingSource.setUrl(source.getUrl());
+        existingSource.setAggregator(true);
+
+        // Update config
+        updateSourcesInConfig(sources);
+
+        // Add the new aggregator to the list. Make sure that the aggregator flag is set to true
+        source.setAggregator(true);
+        sources.add(source);
+
+        return Response.ok(existingSource).build();
     }
 
     @DELETE
@@ -427,6 +457,32 @@ public class CsafResource extends AbstractApiResource {
                 return Response.ok(csafEntity.getContent()).build();
             }
         }
+    }
+
+
+    /**
+     * Returns a list of CSAF sources from the configuration, filtered by the provided predicate.
+     *
+     * @param filter the predicate to filter the sources
+     * @return a list of CSAF sources
+     */
+    private static List<CsafSource> getCsafSourcesFromConfig(Predicate<CsafSource> filter) {
+        var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
+        var sourcesConfig = config.getValue(CsafVulnDataSourceConfigs.CONFIG_SOURCES);
+        return SourcesManager.deserializeSources(new ObjectMapper(), sourcesConfig).stream().filter(filter).toList();
+    }
+
+    /**
+     * Updates the CSAF sources in the configuration.
+     *
+     * @param sources the list of CSAF sources to set in the configuration.
+     */
+    private static void updateSourcesInConfig(List<CsafSource> sources) {
+        var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
+        config.setValue(
+                CsafVulnDataSourceConfigs.CONFIG_SOURCES,
+                SourcesManager.serializeSources(new ObjectMapper(), sources)
+        );
     }
 
 }
