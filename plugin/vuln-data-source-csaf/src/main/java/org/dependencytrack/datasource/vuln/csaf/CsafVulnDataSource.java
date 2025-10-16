@@ -18,23 +18,18 @@
  */
 package org.dependencytrack.datasource.vuln.csaf;
 
-import com.google.protobuf.util.Timestamps;
 import io.csaf.retrieval.CsafLoader;
 import io.csaf.retrieval.ResultCompat;
 import io.csaf.retrieval.RetrievedAggregator;
 import io.csaf.retrieval.RetrievedDocument;
 import io.csaf.retrieval.RetrievedProvider;
 import org.cyclonedx.proto.v1_6.Bom;
-import org.cyclonedx.proto.v1_6.Property;
-import org.cyclonedx.proto.v1_6.Vulnerability;
 import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSource;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.DateTimeException;
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -44,8 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static org.dependencytrack.datasource.vuln.csaf.CycloneDxPropertyNames.PROPERTY_CSAF_PROVIDER_ID;
-import static org.dependencytrack.datasource.vuln.csaf.CycloneDxPropertyNames.PROPERTY_CSAF_UPDATED;
+import static org.dependencytrack.datasource.vuln.csaf.CycloneDxPropertyNames.*;
 
 /**
  * A Vulnerability Data Source that retrieves and processes CSAF documents from configured sources.
@@ -143,14 +137,12 @@ public class CsafVulnDataSource implements VulnDataSource {
     public void markProcessed(final Bom bov) {
         requireNonNull(bov, "bov must not be null");
 
-        final Vulnerability vuln = bov.getVulnerabilities(0);
-
-        final int providerId = extractProviderId(bov);
-        if (providerId == -1) {
+        final var providerId = extractProperty(bov, PROPERTY_ADVISORY_PROVIDER_ID, Integer.class);
+        if (providerId == null) {
             throw new IllegalArgumentException();
         }
 
-        final Instant updatedAt = extractUpdated(bov);
+        final Instant updatedAt = extractProperty(bov, PROPERTY_ADVISORY_UPDATED, Instant.class);
         if (updatedAt == null) {
             throw new IllegalArgumentException();
         }
@@ -282,43 +274,6 @@ public class CsafVulnDataSource implements VulnDataSource {
 
         final ResultCompat<RetrievedDocument> result = currentDocumentIterator.next();
         return ModelConverter.convert(result, currentProvider);
-    }
-
-    /**
-     * Extracts the provider ID from the given vulnerability's properties.
-     *
-     * @param bov the vulnerability to extract the provider ID from
-     * @return the provider ID, or -1 if not found
-     */
-    private static int extractProviderId(final Bom bov) {
-        for (final Property property : bov.getPropertiesList()) {
-            if (PROPERTY_CSAF_PROVIDER_ID.equals(property.getName())) {
-                return Integer.parseInt(property.getValue());
-            }
-        }
-
-        return -1;
-    }
-
-    /**
-     * Extracts the updated timestamp from the given BOV's properties.
-     *
-     * @param bov the BOV to extract the updated timestamp from
-     * @return the updated timestamp, or null if not found
-     */
-    private static Instant extractUpdated(final Bom bov) {
-        for (final Property property : bov.getPropertiesList()) {
-            if (PROPERTY_CSAF_UPDATED.equals(property.getName())) {
-                try {
-                    return Instant.parse(property.getValue());
-                } catch (DateTimeParseException e) {
-                    LOGGER.warn("Failed to parse updated timestamp from BOV property: {}", property.getValue(), e);
-                    return null;
-                }
-            }
-        }
-
-        return null;
     }
 
 }

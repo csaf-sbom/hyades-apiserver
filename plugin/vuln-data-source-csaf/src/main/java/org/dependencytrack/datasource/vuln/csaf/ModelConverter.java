@@ -68,21 +68,51 @@ final class ModelConverter {
         var raw = Json.Default.encodeToString(Csaf.Companion.serializer(), csaf);
         bomBuilder.addProperties(
                 Property.newBuilder()
-                        .setName(PROPERTY_CSAF_JSON)
+                        .setName(PROPERTY_ADVISORY_JSON)
                         .setValue(raw)
                         .build()
         );
         bomBuilder.addProperties(
                 Property.newBuilder()
-                        .setName(PROPERTY_CSAF_PROVIDER_ID)
+                        .setName(PROPERTY_ADVISORY_PROVIDER_ID)
                         .setValue(Integer.toString(currentProvider.getId()))
+                        .build()
+        );
+        bomBuilder.addProperties(Property.newBuilder()
+                .setName(PROPERTY_ADVISORY_PUBLISHER_NAMESPACE)
+                .setValue(csafDoc
+                        .getPublisher()
+                        .getNamespace()
+                        .toString())
+                .build());
+        bomBuilder.addProperties(
+                Property.newBuilder()
+                        .setName(PROPERTY_ADVISORY_TITLE)
+                        .setValue(csafDoc.getTitle())
                         .build()
         );
         bomBuilder.addProperties(
                 Property.newBuilder()
-                        .setName(PROPERTY_CSAF_UPDATED)
+                        .setName(PROPERTY_ADVISORY_UPDATED)
                         .setValue(csafDoc.getTracking().getCurrent_release_date().toString())
                         .build()
+        );
+        bomBuilder.addProperties(Property.newBuilder()
+                .setName(PROPERTY_ADVISORY_NAME)
+                .setValue(csafDoc
+                        .getTracking()
+                        .getId())
+                .build());
+        bomBuilder.addProperties(Property.newBuilder()
+                .setName(PROPERTY_ADVISORY_VERSION)
+                .setValue(csafDoc
+                        .getTracking()
+                        .getVersion())
+                .build());
+        bomBuilder.addProperties(Property.newBuilder()
+                .setName(PROPERTY_ADVISORY_URL)
+                .setValue(retrievedDocument.getUrl())
+                .build()
         );
 
         List<Csaf.Vulnerability> vulnerabilities = csaf.getVulnerabilities();
@@ -118,19 +148,6 @@ final class ModelConverter {
                             Property.newBuilder().setName(TITLE_PROPERTY_NAME).setValue(csafVuln.getTitle()).build()
                     );
                 });
-        out.addProperties(Property.newBuilder()
-                .setName(PROPERTY_CSAF_PUBLISHER_NAMESPACE)
-                .setValue(csafDoc
-                        .getPublisher()
-                        .getNamespace()
-                        .toString())
-                .build());
-        out.addProperties(Property.newBuilder()
-                .setName(PROPERTY_CSAF_TRACKING_ID)
-                .setValue(csafDoc
-                        .getTracking()
-                        .getId())
-                .build());
 
         // Set details. We will use the first note with category "description" as the description.
         // All other notes will be added to the details.

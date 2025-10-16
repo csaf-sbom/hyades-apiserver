@@ -25,7 +25,7 @@ import org.dependencytrack.plugin.PluginManager;
 /**
  * A task that mirrors CSAF vulnerability data sources.
  */
-public class CsafMirrorTask extends AbstractVulnDataSourceMirrorTask {
+public class CsafMirrorTask extends AbstractAdvisoryMirrorTask {
 
     CsafMirrorTask(PluginManager pluginManager) {
         super(pluginManager, CsafMirrorEvent.class, "csaf", Vulnerability.Source.CSAF);
@@ -35,5 +35,6 @@ public class CsafMirrorTask extends AbstractVulnDataSourceMirrorTask {
     public CsafMirrorTask() {
         this(PluginManager.getInstance());
     }
+
 
 }
