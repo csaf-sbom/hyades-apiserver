@@ -24,6 +24,8 @@ import org.dependencytrack.plugin.api.config.ConfigRegistry;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceConfigs.CONFIG_SOURCES;
 
@@ -47,13 +49,13 @@ public class SourcesManager {
         return new SourcesManager(configRegistry, objectMapper);
     }
 
-    public CsafVulnDataSourceConfigs.CsafSources getSources() {
+    public List<CsafSource> getSources() {
         return configRegistry.getOptionalValue(CONFIG_SOURCES)
                 .map(value -> deserializeSources(objectMapper, value))
-                .orElse(new CsafVulnDataSourceConfigs.CsafSources(java.util.Collections.emptyList()));
+                .orElse(new ArrayList<>());
     }
 
-    private static CsafVulnDataSourceConfigs.CsafSources deserializeSources(
+    public static List<CsafSource> deserializeSources(
             final ObjectMapper objectMapper,
             final String serializedSources) {
         try {

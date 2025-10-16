@@ -27,19 +27,13 @@ import org.dependencytrack.plugin.api.config.RuntimeConfigDefinition;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @since 5.7.0
  */
 public class CsafVulnDataSourceConfigs {
-
-    record CsafSources(List<CsafSource> sources) {
-
-    }
-
-    record CsafSource(String name, URL url) {
-    }
 
     public static final RuntimeConfigDefinition<Boolean> CONFIG_ENABLED;
     public static final RuntimeConfigDefinition<String> CONFIG_SOURCES;
@@ -55,7 +49,10 @@ public class CsafVulnDataSourceConfigs {
         final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());;
         final String defaultSources;
         try {
-            defaultSources = objectMapper.writeValueAsString(new CsafSources(List.of(new CsafSource("WID-Bund", defaultApiUrl))));
+            defaultSources = objectMapper.writeValueAsString(new ArrayList<>(List.of(
+                    new CsafSource("CERT-Bund CSAF Aggregator", defaultApiUrl, true)
+            )));
+
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize default sources", e);
         }
@@ -68,8 +65,8 @@ public class CsafVulnDataSourceConfigs {
                 /* isRequired */ false,
                 /* isSecret */ false);
         CONFIG_SOURCES =  new RuntimeConfigDefinition<>(
-                "alias.sync.enabled",
-                "Whether to include alias information in vulnerability data",
+                "sources",
+                "Where the CSAF documents are located",
                 ConfigTypes.STRING,
                 defaultSources,
                 /* isRequired */ false,

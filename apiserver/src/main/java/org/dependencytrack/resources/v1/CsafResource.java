@@ -46,13 +46,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.dependencytrack.auth.Permissions;
-import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSource;
-import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceFactory;
+import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceConfigs;
+import org.dependencytrack.datasource.vuln.csaf.SourcesManager;
 import org.dependencytrack.event.CsafMirrorEvent;
 import org.dependencytrack.model.CsafDocumentEntity;
 import org.dependencytrack.model.CsafSourceEntity;
 import org.dependencytrack.model.Repository;
 import org.dependencytrack.persistence.QueryManager;
+import org.dependencytrack.plugin.ConfigRegistryImpl;
 import org.dependencytrack.resources.AbstractApiResource;
 import org.dependencytrack.resources.v1.openapi.PaginatedApi;
 import org.dependencytrack.tasks.CsafMirrorTask;
@@ -104,34 +105,11 @@ public class CsafResource extends AbstractApiResource {
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_READ)
     public Response getCsafAggregators(@QueryParam("searchText") String searchText, @QueryParam("pageSize") int pageSize, @QueryParam("pageNumber") int pageNumber) {
-        String extensionPointName = "csaf";
-        /*var pluginManager = PluginManager.getInstance();
+        var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
+        var sourcesConfig = config.getValue(CsafVulnDataSourceConfigs.CONFIG_SOURCES);
+        var sources = SourcesManager.deserializeSources(new ObjectMapper(), sourcesConfig);
 
-        final ExtensionPointSpec<?> extensionPoint =
-                pluginManager.getExtensionPoints().stream()
-                        .filter(spec -> spec.name().equals(extensionPointName))
-                        .findAny()
-                        .orElseThrow(NotFoundException::new);
-
-        final ExtensionFactory<?> extensionFactory =
-                pluginManager.getFactories(extensionPoint.extensionPointClass()).stream()
-                        .filter(factory -> factory.extensionName().equals("vuln.datasource"))
-                        .findAny()
-                        .orElseThrow(NotFoundException::new);
-
-        final Map<String, RuntimeConfigDefinition<?>> configByName =
-                extensionFactory.runtimeConfigs().stream()
-                        .collect(Collectors.toMap(
-                                RuntimeConfigDefinition::name,
-                                Function.identity()));*/
-
-        CsafVulnDataSource dataSource = (CsafVulnDataSource) new CsafVulnDataSourceFactory().create();
-        var sources = dataSource.sourcesManager.getSources();
-
-        try (QueryManager qm = new QueryManager(getAlpineRequest())) {
-            final PaginatedResult result = qm.getCsafSources(true, false);
-            return Response.ok(result.getObjects()).header(TOTAL_COUNT_HEADER, result.getTotal()).build();
-        }
+        return Response.ok(sources).header(TOTAL_COUNT_HEADER, sources).build();
     }
 
     @PUT
