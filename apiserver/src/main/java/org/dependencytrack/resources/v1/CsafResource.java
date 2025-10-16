@@ -470,6 +470,7 @@ public class CsafResource extends AbstractApiResource {
         existingSource.setAggregator(isAggregator);
         existingSource.setDomain(CsafUtil.validateDomain(source.getUrl()));
         existingSource.setDiscovered(source.isDiscovered());
+        existingSource.setLastFetched(source.getLastFetched());
 
         // Update config
         updateSourcesInConfig(sources);

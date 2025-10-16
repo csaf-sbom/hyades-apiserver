@@ -19,6 +19,7 @@
 package org.dependencytrack.resources.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.dependencytrack.datasource.vuln.csaf.CsafSource;
 import org.dependencytrack.datasource.vuln.csaf.CsafVulnDataSourceConfigs;
 import org.dependencytrack.datasource.vuln.csaf.SourcesManager;
@@ -55,7 +56,7 @@ public class CsafSourceConfigProvider {
         var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
         config.setValue(
                 CsafVulnDataSourceConfigs.CONFIG_SOURCES,
-                SourcesManager.serializeSources(new ObjectMapper(), sources)
+                SourcesManager.serializeSources(new ObjectMapper().registerModule(new JavaTimeModule()), sources)
         );
     }
 

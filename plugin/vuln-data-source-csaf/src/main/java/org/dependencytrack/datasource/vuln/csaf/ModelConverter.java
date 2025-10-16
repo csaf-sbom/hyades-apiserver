@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.cyclonedx.proto.v1_6.Severity.*;
+import static org.dependencytrack.datasource.vuln.csaf.CycloneDxPropertyNames.*;
 
 /**
  * This class takes care of converting a CSAF document to a CycloneDX BOM.
@@ -42,9 +43,6 @@ final class ModelConverter {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModelConverter.class);
 
     private static final String TITLE_PROPERTY_NAME = "dependency-track:vuln:title";
-    private static final String PUBLISHERNAMESPACE_PROPERTY_NAME = "dependency-track:vuln:csaf:publisher";
-    private static final String TRACKINGID_PROPERTY_NAME = "dependency-track:vuln:csaf:trackingId";
-    private static final String RAW_PROPERTY_NAME = "dependency-track:vuln:csaf:raw";
     private static final Source SOURCE = Source.newBuilder().setName("CSAF").build();
 
     /**
@@ -70,8 +68,20 @@ final class ModelConverter {
         var raw = Json.Default.encodeToString(Csaf.Companion.serializer(), csaf);
         bomBuilder.addProperties(
                 Property.newBuilder()
-                        .setName(RAW_PROPERTY_NAME)
+                        .setName(PROPERTY_CSAF_JSON)
                         .setValue(raw)
+                        .build()
+        );
+        bomBuilder.addProperties(
+                Property.newBuilder()
+                        .setName(PROPERTY_CSAF_PROVIDER_ID)
+                        .setValue(Integer.toString(currentProvider.getId()))
+                        .build()
+        );
+        bomBuilder.addProperties(
+                Property.newBuilder()
+                        .setName(PROPERTY_CSAF_UPDATED)
+                        .setValue(csafDoc.getTracking().getCurrent_release_date().toString())
                         .build()
         );
 
@@ -109,14 +119,14 @@ final class ModelConverter {
                     );
                 });
         out.addProperties(Property.newBuilder()
-                .setName(PUBLISHERNAMESPACE_PROPERTY_NAME)
+                .setName(PROPERTY_CSAF_PUBLISHER_NAMESPACE)
                 .setValue(csafDoc
                         .getPublisher()
                         .getNamespace()
                         .toString())
                 .build());
         out.addProperties(Property.newBuilder()
-                .setName(TRACKINGID_PROPERTY_NAME)
+                .setName(PROPERTY_CSAF_TRACKING_ID)
                 .setValue(csafDoc
                         .getTracking()
                         .getId())

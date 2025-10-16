@@ -18,18 +18,23 @@
  */
 package org.dependencytrack.datasource.vuln.csaf;
 
+import com.google.protobuf.util.Timestamps;
 import io.csaf.retrieval.CsafLoader;
 import io.csaf.retrieval.ResultCompat;
 import io.csaf.retrieval.RetrievedAggregator;
 import io.csaf.retrieval.RetrievedDocument;
 import io.csaf.retrieval.RetrievedProvider;
 import org.cyclonedx.proto.v1_6.Bom;
+import org.cyclonedx.proto.v1_6.Property;
+import org.cyclonedx.proto.v1_6.Vulnerability;
 import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSource;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +42,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
+
+import static java.util.Objects.requireNonNull;
+import static org.dependencytrack.datasource.vuln.csaf.CycloneDxPropertyNames.PROPERTY_CSAF_PROVIDER_ID;
+import static org.dependencytrack.datasource.vuln.csaf.CycloneDxPropertyNames.PROPERTY_CSAF_UPDATED;
 
 /**
  * A Vulnerability Data Source that retrieves and processes CSAF documents from configured sources.
@@ -92,6 +101,8 @@ public class CsafVulnDataSource implements VulnDataSource {
             }
 
             successfullyCompletedProviders.add(currentProvider);
+            LOGGER.info("Mirroring documents from CSAF provider {} completed", currentProvider.getUrl());
+
             closeCurrentProvider();
             currentProviderIndex++;
         }
@@ -105,6 +116,8 @@ public class CsafVulnDataSource implements VulnDataSource {
                     return true;
                 }
                 successfullyCompletedProviders.add(currentProvider);
+                LOGGER.info("Mirroring documents from CSAF provider {} completed", currentProvider.getUrl());
+
                 closeCurrentProvider();
             }
             currentProviderIndex++;
@@ -124,6 +137,31 @@ public class CsafVulnDataSource implements VulnDataSource {
         nextItem = null;
         hasNextCalled = false;
         return item;
+    }
+
+    @Override
+    public void markProcessed(final Bom bov) {
+        requireNonNull(bov, "bov must not be null");
+
+        final Vulnerability vuln = bov.getVulnerabilities(0);
+
+        final int providerId = extractProviderId(bov);
+        if (providerId == -1) {
+            throw new IllegalArgumentException();
+        }
+
+        final Instant updatedAt = extractUpdated(bov);
+        if (updatedAt == null) {
+            throw new IllegalArgumentException();
+        }
+
+        sourcesManager.maybeAdvance(providerId, updatedAt);
+    }
+
+    @Override
+    public void close() {
+        sourcesManager.maybeCommit();
+        closeCurrentProvider();
     }
 
     /**
@@ -196,7 +234,6 @@ public class CsafVulnDataSource implements VulnDataSource {
         }
 
         currentProvider = enabledProviders.get(currentProviderIndex);
-        LOGGER.info("Starting to mirror provider {}", currentProvider.getUrl());
 
         // Try to retrieve the provider, either as a domain or a full URL
         try {
@@ -211,6 +248,8 @@ public class CsafVulnDataSource implements VulnDataSource {
         final var since = currentProvider.getLastFetched() != null ?
                 kotlinx.datetime.Instant.Companion.fromEpochMilliseconds(currentProvider.getLastFetched().toEpochMilli()) : null;
 
+        LOGGER.info("Starting to mirror provider {} since {}", currentProvider.getUrl(), since);
+
         // Set up the document stream and iterator
         currentDocumentStream = currentRetrievedProvider.streamDocuments(since);
         currentDocumentIterator = currentDocumentStream.iterator();
@@ -222,8 +261,6 @@ public class CsafVulnDataSource implements VulnDataSource {
      * Closes the current provider and its associated document stream and iterator.
      */
     void closeCurrentProvider() {
-        LOGGER.info("Mirroring documents from CSAF provider {} completed", currentProvider.getUrl());
-
         if (currentDocumentStream != null) {
             currentDocumentStream.close();
             currentDocumentIterator = null;
@@ -245,6 +282,43 @@ public class CsafVulnDataSource implements VulnDataSource {
 
         final ResultCompat<RetrievedDocument> result = currentDocumentIterator.next();
         return ModelConverter.convert(result, currentProvider);
+    }
+
+    /**
+     * Extracts the provider ID from the given vulnerability's properties.
+     *
+     * @param bov the vulnerability to extract the provider ID from
+     * @return the provider ID, or -1 if not found
+     */
+    private static int extractProviderId(final Bom bov) {
+        for (final Property property : bov.getPropertiesList()) {
+            if (PROPERTY_CSAF_PROVIDER_ID.equals(property.getName())) {
+                return Integer.parseInt(property.getValue());
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Extracts the updated timestamp from the given BOV's properties.
+     *
+     * @param bov the BOV to extract the updated timestamp from
+     * @return the updated timestamp, or null if not found
+     */
+    private static Instant extractUpdated(final Bom bov) {
+        for (final Property property : bov.getPropertiesList()) {
+            if (PROPERTY_CSAF_UPDATED.equals(property.getName())) {
+                try {
+                    return Instant.parse(property.getValue());
+                } catch (DateTimeParseException e) {
+                    LOGGER.warn("Failed to parse updated timestamp from BOV property: {}", property.getValue(), e);
+                    return null;
+                }
+            }
+        }
+
+        return null;
     }
 
 }
