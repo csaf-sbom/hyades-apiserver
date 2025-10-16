@@ -18,11 +18,14 @@
  */
 package org.dependencytrack.datasource.vuln.csaf;
 
+import io.csaf.retrieval.CsafLoader;
 import org.cyclonedx.proto.v1_6.Bom;
 import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSource;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @since 5.7.0
@@ -31,20 +34,54 @@ public class CsafVulnDataSource implements VulnDataSource {
 
     private final Queue<String> advisoryQueue;
     public final SourcesManager sourcesManager;
+    private boolean hasNextCalled = false;
+    private CsafLoader csafLoader;
 
     public CsafVulnDataSource(SourcesManager sourcesManager) {
         this.advisoryQueue = new LinkedList<>();
         this.sourcesManager = sourcesManager;
+        this.csafLoader = CsafLoader.Companion.getLazyLoader();
     }
 
     @Override
     public boolean hasNext() {
-        return false;
+        if (hasNextCalled && !advisoryQueue.isEmpty()) {
+            return true;
+        }
+
+        discoverProvidersFromAggregators(csafLoader);
+
+        hasNextCalled = true;
+
+        if (!advisoryQueue.isEmpty()) {
+            return true;
+        }
+        /*if (!client.hasNext()) {
+            return false;
+        }
+
+        final Collection<SecurityAdvisory> advisories = client.next();
+        LOGGER.debug("Fetched {} advisories", advisories.size());
+
+        advisoryQueue.addAll(advisories);*/
+        return !advisoryQueue.isEmpty();
     }
 
     @Override
     public Bom next() {
         return null;
+    }
+
+    void discoverProvidersFromAggregators() {
+        sourcesManager.getSources();
+        var aggregators = csafSourceRepository.findEnabledAggregators();
+        for (CsafSourceEntity aggregator : aggregators) {
+            try {
+                discoverProvider(aggregator, csafLoader);
+            } catch (ExecutionException e) {
+                LOGGER.error("Error while discovering providers from aggregator {}", aggregator.getUrl(), e);
+            }
+        }
     }
 
 }

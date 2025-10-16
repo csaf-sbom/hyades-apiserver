@@ -399,8 +399,8 @@ public class CsafResource extends AbstractApiResource {
     private static Response listSources(String searchText, Boolean isAggregator, Boolean isDiscovery) {
         var sources = getCsafSourcesFromConfig(filter ->
                 filter.isAggregator() == isAggregator && filter.isDiscovery() == isDiscovery &&
-                (searchText == null || searchText.isEmpty()) || filter.getName().toLowerCase().contains(searchText.toLowerCase()) ||
-                filter.getUrl().toLowerCase().contains(searchText.toLowerCase()));
+                        ((searchText == null || searchText.isEmpty()) || (filter.getName().toLowerCase().contains(searchText.toLowerCase()) ||
+                filter.getUrl().toLowerCase().contains(searchText.toLowerCase()))));
 
         return Response.ok(sources).header(TOTAL_COUNT_HEADER, sources).build();
     }
