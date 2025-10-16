@@ -18,6 +18,8 @@
  */
 package org.dependencytrack.datasource.vuln.csaf;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.time.Instant;
 
 /**
@@ -27,16 +29,45 @@ import java.time.Instant;
  */
 public class CsafSource {
 
+    /**
+     * The unique identifier of the source.
+     */
     private int id;
 
+    /**
+     * The name of the source.
+     */
     private String name;
 
+    /**
+     * The URL or domain of the source.
+     */
     private String url;
 
+    /**
+     * Whether the source is an aggregator (true) or a provider (false).
+     */
     private boolean aggregator;
 
+    /**
+     * Whether the source supports discovery of additional providers (true) or not (false).
+     */
+    private boolean discovery;
+
+    /**
+     * Whether the source is enabled (true) or disabled (false).
+     */
     private boolean enabled;
 
+    /**
+     * Whether the URL is a domain (true) or a full URL (false).
+     */
+    private boolean domain;
+
+    /**
+     * The timestamp of the last successful fetch from this source (or null).
+     */
+    @Nullable
     private Instant lastFetched;
 
     public CsafSource() {}
@@ -83,11 +114,12 @@ public class CsafSource {
         this.enabled = enabled;
     }
 
+    @Nullable
     public Instant getLastFetched() {
         return lastFetched;
     }
 
-    public void setLastFetched(Instant lastFetched) {
+    public void setLastFetched(@Nullable Instant lastFetched) {
         this.lastFetched = lastFetched;
     }
 
@@ -98,4 +130,21 @@ public class CsafSource {
     public void setId(int id) {
         this.id = id;
     }
+
+    public boolean isDiscovery() {
+        return discovery;
+    }
+
+    public void setDiscovery(boolean discovery) {
+        this.discovery = discovery;
+    }
+
+    public boolean isDomain() {
+        return domain;
+    }
+
+    public void setDomain(boolean domain) {
+        this.domain = domain;
+    }
+
 }

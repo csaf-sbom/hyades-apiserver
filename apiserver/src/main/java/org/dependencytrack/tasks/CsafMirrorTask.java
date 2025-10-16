@@ -18,45 +18,22 @@
  */
 package org.dependencytrack.tasks;
 
-import alpine.common.logging.Logger;
-import alpine.event.framework.Event;
-import alpine.event.framework.LoggableSubscriber;
-import alpine.model.ConfigProperty;
 import org.dependencytrack.event.CsafMirrorEvent;
-import org.dependencytrack.event.kafka.KafkaEventDispatcher;
-import org.dependencytrack.persistence.QueryManager;
+import org.dependencytrack.model.Vulnerability;
+import org.dependencytrack.plugin.PluginManager;
 
-import static org.dependencytrack.model.ConfigPropertyConstants.VULNERABILITY_SOURCE_CSAF_ENABLED;
+/**
+ * A task that mirrors CSAF vulnerability data sources.
+ */
+public class CsafMirrorTask extends AbstractVulnDataSourceMirrorTask {
 
-public class CsafMirrorTask implements LoggableSubscriber {
-
-    private static final Logger LOGGER = Logger.getLogger(CsafMirrorTask.class);
-
-    /**
-     * {@inheritDoc}
-     */
-    public void inform(final Event e) {
-        if (e instanceof CsafMirrorEvent) {
-            try (final QueryManager qm = new QueryManager()) {
-                final ConfigProperty enabled = qm.getConfigProperty(
-                        VULNERABILITY_SOURCE_CSAF_ENABLED.getGroupName(),
-                        VULNERABILITY_SOURCE_CSAF_ENABLED.getPropertyName()
-                );
-                final boolean isEnabled = enabled != null && Boolean.parseBoolean(enabled.getPropertyValue());
-                if (!isEnabled) {
-                    LOGGER.debug("CSAF SOURCES ARE DISABLED, DISCARDING CSAF MIRROR EVENT");
-                    return;
-                }
-
-                final long start = System.currentTimeMillis();
-                LOGGER.info("Starting CSAF mirroring task");
-                new KafkaEventDispatcher().dispatchEvent(new CsafMirrorEvent()).join();
-                final long end = System.currentTimeMillis();
-                LOGGER.info("CSAF mirroring complete. Time spent (total): " + (end - start) + "ms");
-            } catch (Exception ex) {
-                LOGGER.error("An unexpected error occurred while triggering CSAF mirroring", ex);
-            }
-
-        }        
+    CsafMirrorTask(PluginManager pluginManager) {
+        super(pluginManager, CsafMirrorEvent.class, "csaf", Vulnerability.Source.CSAF);
     }
+
+    @SuppressWarnings("unused")
+    public CsafMirrorTask() {
+        this(PluginManager.getInstance());
+    }
+
 }

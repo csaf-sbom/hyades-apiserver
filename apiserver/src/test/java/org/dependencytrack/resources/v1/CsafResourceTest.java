@@ -21,6 +21,7 @@ package org.dependencytrack.resources.v1;
 import alpine.server.filters.ApiFilter;
 import alpine.server.filters.AuthenticationFilter;
 import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -77,7 +78,6 @@ public class CsafResourceTest extends ResourceTest {
     @Override
     public void before() throws Exception {
         super.before();
-
     }
 
     @Test
@@ -105,4 +105,30 @@ public class CsafResourceTest extends ResourceTest {
         JsonArray json = parseJsonArray(response);
         Assert.assertNotNull(json);
     }
+
+    @Test
+    public void updateCsafSourceTest() {
+        final ExtensionPointSpec<VulnDataSource> extensionPointSpec = new VulnDataSourceSpec();
+        final ExtensionFactory<VulnDataSource> extensionFactory = new CsafVulnDataSourceFactory();
+        final var configRegistry = ConfigRegistryImpl.forExtension(extensionPointSpec.name(), extensionFactory.extensionName());
+        configRegistry.createWithDefaultsIfNotExist(extensionFactory.runtimeConfigs());
+
+        doReturn(List.of(extensionPointSpec)).when(PLUGIN_MANAGER_MOCK).getExtensionPoints();
+        doReturn(List.of(extensionFactory)).when(PLUGIN_MANAGER_MOCK).getFactories(eq(VulnDataSource.class));
+
+        CsafSource aggregator = new CsafSource();
+        aggregator.setId(0);
+        aggregator.setName("Testsource");
+        aggregator.setUrl("example.com");
+        aggregator.setEnabled(true);
+
+        Response response = jersey.target(V1_CSAF).path("/aggregators/").request().header(X_API_KEY, apiKey)
+                .post(Entity.entity(aggregator, MediaType.APPLICATION_JSON));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+
+        JsonObject json = parseJsonObject(response);
+        Assert.assertNotNull(json);
+        Assert.assertTrue(json.getBoolean("domain"));
+    }
+
 }

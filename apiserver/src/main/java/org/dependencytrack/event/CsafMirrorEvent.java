@@ -24,7 +24,6 @@ import alpine.event.framework.Event;
  * Defines an event used to start a mirror of configured CSAF vulnerability sources.
  *
  * @author Lawrence Dean
- * TODO: -at-since 3.0.0 introduce API version
  */
 public class CsafMirrorEvent implements Event {
 }
