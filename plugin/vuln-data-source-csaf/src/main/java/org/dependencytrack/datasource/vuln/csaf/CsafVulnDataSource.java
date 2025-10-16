@@ -19,69 +19,232 @@
 package org.dependencytrack.datasource.vuln.csaf;
 
 import io.csaf.retrieval.CsafLoader;
+import io.csaf.retrieval.ResultCompat;
+import io.csaf.retrieval.RetrievedAggregator;
+import io.csaf.retrieval.RetrievedDocument;
+import io.csaf.retrieval.RetrievedProvider;
 import org.cyclonedx.proto.v1_6.Bom;
 import org.dependencytrack.plugin.api.datasource.vuln.VulnDataSource;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 /**
+ * A Vulnerability Data Source that retrieves and processes CSAF documents from configured sources.
+ *
  * @since 5.7.0
  */
 public class CsafVulnDataSource implements VulnDataSource {
 
-    private final Queue<String> advisoryQueue;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CsafVulnDataSource.class);
+
     public final SourcesManager sourcesManager;
     private boolean hasNextCalled = false;
-    private CsafLoader csafLoader;
+    private boolean hasDiscovered = false;
+    private final CsafLoader csafLoader;
+    private final List<CsafSource> enabledProviders;
+    private CsafSource currentProvider;
+    private int currentProviderIndex;
+    private RetrievedProvider currentRetrievedProvider;
+    private Stream<ResultCompat<RetrievedDocument>> currentDocumentStream;
+    private Iterator<ResultCompat<RetrievedDocument>> currentDocumentIterator;
+    private Bom nextItem;
+    private final Set<CsafSource> successfullyCompletedProviders;
 
-    public CsafVulnDataSource(SourcesManager sourcesManager) {
-        this.advisoryQueue = new LinkedList<>();
+    public CsafVulnDataSource(
+            SourcesManager sourcesManager
+    ) {
         this.sourcesManager = sourcesManager;
         this.csafLoader = CsafLoader.Companion.getLazyLoader();
+        this.enabledProviders = sourcesManager.listProviders(CsafSource::isEnabled);
+        this.successfullyCompletedProviders = new HashSet<>();
     }
 
     @Override
     public boolean hasNext() {
-        if (hasNextCalled && !advisoryQueue.isEmpty()) {
-            return true;
+        // Try to discover new providers from aggregators before checking for advisories. Only
+        // do this once per invocation of the data source.
+        if (!hasDiscovered) {
+            discoverProvidersFromAggregators();
+            hasDiscovered = true;
         }
 
-        discoverProvidersFromAggregators(csafLoader);
+        if (hasNextCalled && nextItem != null) {
+            return true;
+        }
 
         hasNextCalled = true;
 
-        if (!advisoryQueue.isEmpty()) {
-            return true;
-        }
-        /*if (!client.hasNext()) {
-            return false;
+        if (currentDocumentIterator != null) {
+            final Bom item = readNextDocument();
+            if (item != null) {
+                nextItem = item;
+                return true;
+            }
+
+            successfullyCompletedProviders.add(currentProvider);
+            closeCurrentProvider();
+            currentProviderIndex++;
         }
 
-        final Collection<SecurityAdvisory> advisories = client.next();
-        LOGGER.debug("Fetched {} advisories", advisories.size());
+        if (currentProviderIndex < enabledProviders.size()) {
+            final boolean nextEcosystemOpened = openNextProvider();
+            if (nextEcosystemOpened) {
+                final Bom item = readNextDocument();
+                if (item != null) {
+                    nextItem = item;
+                    return true;
+                }
+                successfullyCompletedProviders.add(currentProvider);
+                closeCurrentProvider();
+            }
+            currentProviderIndex++;
+        }
 
-        advisoryQueue.addAll(advisories);*/
-        return !advisoryQueue.isEmpty();
+        nextItem = null;
+        return false;
     }
 
     @Override
     public Bom next() {
-        return null;
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
+
+        final Bom item = nextItem;
+        nextItem = null;
+        hasNextCalled = false;
+        return item;
     }
 
+    /**
+     * Discovers new CSAF providers from all enabled aggregators.
+     * <p>
+     * This will call {@link SourcesManager#maybeCommit()} to commit changes if any new providers were discovered.
+     */
     void discoverProvidersFromAggregators() {
-        sourcesManager.getSources();
-        var aggregators = csafSourceRepository.findEnabledAggregators();
-        for (CsafSourceEntity aggregator : aggregators) {
+        // Loop through all enabled aggregators and discover providers from them
+        var aggregators = sourcesManager.listAggregators();
+        for (var aggregator : aggregators) {
             try {
-                discoverProvider(aggregator, csafLoader);
-            } catch (ExecutionException e) {
+                discoverProvider(aggregator);
+            } catch (ExecutionException | InterruptedException e) {
                 LOGGER.error("Error while discovering providers from aggregator {}", aggregator.getUrl(), e);
             }
         }
+
+        sourcesManager.maybeCommit();
+    }
+
+    /**
+     * Discovers new CSAF providers from the given aggregator. This will call {@link SourcesManager#maybeDiscover(CsafSource)} for each new provider found and advance the
+     * lastFetched timestamp of the aggregator if any providers were found.
+     * <p>
+     * This will not yet commit changes; call {@link SourcesManager#maybeCommit()} afterward if needed.
+     *
+     * @param aggregator the aggregator to discover providers from
+     */
+     void discoverProvider(CsafSource aggregator) throws ExecutionException, InterruptedException {
+        // Check if this contains any providers that we don't know about yet
+        final RetrievedAggregator retrieved;
+        if (aggregator.isDomain()) {
+            retrieved = RetrievedAggregator.fromDomainAsync(aggregator.getUrl(), this.csafLoader).get();
+        } else {
+            retrieved = RetrievedAggregator.fromUrlAsync(aggregator.getUrl(), this.csafLoader).get();
+        }
+
+        var begin = Instant.now();
+        retrieved.fetchAllAsync().get().forEach((provider) -> {
+            if (provider.getOrNull() != null) {
+                var metadataJson = provider.getOrNull().getJson();
+                var url = metadataJson.getCanonical_url().toString();
+                var source = new CsafSource(
+                        metadataJson.getPublisher().getName(),
+                        url,
+                        /* isAggregator */ false,
+                        /* isDiscovery */ true,
+                        /* isEnabled */ false,
+                        /* isDomain */ false
+                );
+                if (sourcesManager.maybeDiscover(source)) {
+                    LOGGER.info("Discovered new CSAF provider {} from retrieved {}", url, aggregator.getName());
+                }
+            }
+        });
+
+        sourcesManager.maybeAdvance(aggregator.getId(), begin);
+    }
+
+    /**
+     * Opens the next enabled provider and initializes its document stream and iterator.
+     *
+     * @return true if a provider was opened, false if there are no more providers to open
+     */
+    boolean openNextProvider() {
+        // If there are no more providers to open, return false
+        if (currentProviderIndex >= enabledProviders.size()) {
+            return false;
+        }
+
+        currentProvider = enabledProviders.get(currentProviderIndex);
+        LOGGER.info("Starting to mirror provider {}", currentProvider.getUrl());
+
+        // Try to retrieve the provider, either as a domain or a full URL
+        try {
+            currentRetrievedProvider = currentProvider.isDomain()
+                    ? RetrievedProvider.fromDomainAsync(currentProvider.getUrl(), this.csafLoader).get()
+                    : RetrievedProvider.fromUrlAsync(currentProvider.getUrl(), this.csafLoader).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to retrieve provider from " + currentProvider.getUrl(), e);
+        }
+
+        // If we have a lastFetched timestamp, use it to only fetch documents updated since then
+        final var since = currentProvider.getLastFetched() != null ?
+                kotlinx.datetime.Instant.Companion.fromEpochMilliseconds(currentProvider.getLastFetched().toEpochMilli()) : null;
+
+        // Set up the document stream and iterator
+        currentDocumentStream = currentRetrievedProvider.streamDocuments(since);
+        currentDocumentIterator = currentDocumentStream.iterator();
+
+        return true;
+    }
+
+    /**
+     * Closes the current provider and its associated document stream and iterator.
+     */
+    void closeCurrentProvider() {
+        LOGGER.info("Mirroring documents from CSAF provider {} completed", currentProvider.getUrl());
+
+        if (currentDocumentStream != null) {
+            currentDocumentStream.close();
+            currentDocumentIterator = null;
+        }
+
+        currentProvider = null;
+    }
+
+    /**
+     * Reads the next document from the current provider's document iterator and converts it to a CycloneDX BOM.
+     *
+     * @return the next CycloneDX BOM, or null if there are no more documents or if the current provider is not set
+     */
+    @Nullable
+    Bom readNextDocument() {
+        if (currentDocumentIterator == null || !currentDocumentIterator.hasNext()) {
+            return null;
+        }
+
+        final ResultCompat<RetrievedDocument> result = currentDocumentIterator.next();
+        return ModelConverter.convert(result, currentProvider);
     }
 
 }

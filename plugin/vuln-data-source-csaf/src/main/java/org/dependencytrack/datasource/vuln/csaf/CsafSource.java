@@ -50,9 +50,9 @@ public class CsafSource {
     private boolean aggregator;
 
     /**
-     * Whether the source supports discovery of additional providers (true) or not (false).
+     * Whether the source was discovered (true) or manually added (false).
      */
-    private boolean discovery;
+    private boolean discovered;
 
     /**
      * Whether the source is enabled (true) or disabled (false).
@@ -72,10 +72,18 @@ public class CsafSource {
 
     public CsafSource() {}
 
-    public CsafSource(String name, String url, boolean isAggregator) {
+    public CsafSource(String name,
+                      String url,
+                      boolean isAggregator,
+                      boolean isDiscovered,
+                      boolean isEnabled,
+                      boolean isDomain) {
         this.name = name;
         this.url = url;
         this.aggregator = isAggregator;
+        this.discovered = isDiscovered;
+        this.enabled = isEnabled;
+        this.domain = isDomain;
     }
 
     public String getName() {
@@ -131,12 +139,12 @@ public class CsafSource {
         this.id = id;
     }
 
-    public boolean isDiscovery() {
-        return discovery;
+    public boolean isDiscovered() {
+        return discovered;
     }
 
-    public void setDiscovery(boolean discovery) {
-        this.discovery = discovery;
+    public void setDiscovered(boolean discovered) {
+        this.discovered = discovered;
     }
 
     public boolean isDomain() {

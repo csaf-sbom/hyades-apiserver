@@ -21,6 +21,7 @@ package org.dependencytrack.resources.v1;
 import alpine.common.logging.Logger;
 import alpine.server.auth.PermissionRequired;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -96,6 +97,8 @@ public class CsafResource extends AbstractApiResource {
     })
     @PermissionRequired(Permissions.Constants.VULNERABILITY_MANAGEMENT_UPDATE)
     public Response triggerMirror() {
+        LOGGER.info("Triggering CSAF mirror task manually");
+
         var mirror = new CsafMirrorTask();
         mirror.inform(new CsafMirrorEvent());
 
@@ -382,7 +385,7 @@ public class CsafResource extends AbstractApiResource {
         try {
             var config = ConfigRegistryImpl.forExtension("vuln.datasource", "csaf");
             var sourcesConfig = config.getValue(CsafVulnDataSourceConfigs.CONFIG_SOURCES);
-            return SourcesManager.deserializeSources(new ObjectMapper(), sourcesConfig).stream().filter(filter).toList();
+            return SourcesManager.deserializeSources(new ObjectMapper().registerModule(new JavaTimeModule()), sourcesConfig).stream().filter(filter).toList();
         } catch (NoSuchElementException e) {
             return new ArrayList<>();
         }
@@ -398,7 +401,7 @@ public class CsafResource extends AbstractApiResource {
      */
     private static Response listSources(String searchText, Boolean isAggregator, Boolean isDiscovery) {
         var sources = getCsafSourcesFromConfig(filter ->
-                filter.isAggregator() == isAggregator && filter.isDiscovery() == isDiscovery &&
+                filter.isAggregator() == isAggregator && filter.isDiscovered() == isDiscovery &&
                         ((searchText == null || searchText.isEmpty()) || (filter.getName().toLowerCase().contains(searchText.toLowerCase()) ||
                 filter.getUrl().toLowerCase().contains(searchText.toLowerCase()))));
 
@@ -452,7 +455,7 @@ public class CsafResource extends AbstractApiResource {
             return Response.status(Response.Status.BAD_REQUEST).entity("Invalid domain or url").build();
         }
 
-        // Fetch existing source and look for the one to update
+        // Fetch an existing source and look for the one to update
         var sources = getCsafSourcesFromConfig(filter -> filter.isAggregator() == isAggregator);
         var existingSource = getCsafSourceByIdFromConfig(sources, source.getId());
         if (existingSource == null) {
@@ -466,6 +469,7 @@ public class CsafResource extends AbstractApiResource {
         existingSource.setUrl(source.getUrl());
         existingSource.setAggregator(isAggregator);
         existingSource.setDomain(CsafUtil.validateDomain(source.getUrl()));
+        existingSource.setDiscovered(source.isDiscovered());
 
         // Update config
         updateSourcesInConfig(sources);
